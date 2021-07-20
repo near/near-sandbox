@@ -15,5 +15,8 @@
   "scripts": {
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js"
-  }
+  }, 
+  "files": [
+    "*.js"
+  ]
 }
