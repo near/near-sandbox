@@ -1,6 +1,6 @@
 {
   "name": "near-sandbox",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "CLI tool for testing NEAR smart contracts",
   "bin": {
     "near-sandbox": "./run.js"
@@ -15,7 +15,7 @@
   "scripts": {
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js"
-  }, 
+  },
   "files": [
     "*.js"
   ]
