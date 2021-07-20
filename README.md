@@ -1,4 +1,4 @@
-# sandbox
+# Near Sandbox
 Tools for accessing near-sandbox
 
 ## npm
