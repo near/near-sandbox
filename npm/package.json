@@ -10,13 +10,22 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "binary-install": "^0.0.1"
+    "binary-install": "^0.0.1",
+    "promisify-child-process": "^4.1.1",
+    "rimraf": "^3.0.2"
   },
   "scripts": {
     "postinstall": "node ./install.js",
-    "preinstall": "node ./uninstall.js"
+    "preinstall": "node ./uninstall.js",
+    "build": "tsc"
   },
   "files": [
     "*.js"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^16.4.1",
+    "@types/rimraf": "^3.0.1",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
+  }
 }
