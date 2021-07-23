@@ -20,7 +20,9 @@
     "build": "tsc"
   },
   "files": [
-    "*.js"
+    "*.js",
+    "*/runner/*",
+    "*/tsconfig.json"
   ],
   "devDependencies": {
     "@types/node": "^16.4.1",
