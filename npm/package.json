@@ -10,7 +10,7 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "binary-install": "^0.0.1",
+    "binary-install": "^0.1.1",
     "promisify-child-process": "^4.1.1",
     "rimraf": "^3.0.2"
   },
