@@ -17,7 +17,8 @@
   "scripts": {
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublish": "yarn build"
   },
   "files": [
     "*.js",

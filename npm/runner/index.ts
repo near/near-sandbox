@@ -11,7 +11,8 @@ import  getBinary  from "../getBinary";
 type ChildProcessPromise = Promise<ChildProcess & Promise<Output>>;
 
 const rm = promisify(rimraf);
-const runFile: string = getBinary()._getBinaryPath();
+
+const runFile: string = getBinary().binaryPath;
 
 async function exists(d: PathLike): Promise<boolean> {
   try { 

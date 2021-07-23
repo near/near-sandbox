@@ -31,7 +31,8 @@ const util_1 = require("util");
 // @ts-ignore
 const getBinary_1 = __importDefault(require("../getBinary"));
 const rm = util_1.promisify(rimraf_1.default);
-const runFile = getBinary_1.default()._getBinaryPath();
+console.log(getBinary_1.default());
+const runFile = getBinary_1.default().binaryPath;
 async function exists(d) {
     try {
         await fs.access(d);
