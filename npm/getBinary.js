@@ -22,7 +22,7 @@ function getBinary() {
     const version = require('./package.json').version;
     const url = `https://cloudflare-ipfs.com/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/${ platform }-near-sandbox.tar.gz`;
     const name = 'near-sandbox';
-    return new Binary(url, { name });
+    return new Binary(name, url);
 }
 
 module.exports = getBinary;
