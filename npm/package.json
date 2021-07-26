@@ -12,7 +12,8 @@
   "dependencies": {
     "binary-install": "^0.1.1",
     "promisify-child-process": "^4.1.1",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "temp-dir": "^2.0.0"
   },
   "scripts": {
     "postinstall": "node ./install.js",
