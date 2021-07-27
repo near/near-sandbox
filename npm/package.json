@@ -18,7 +18,8 @@
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js",
     "build": "tsc",
-    "prepublish": "yarn build"
+    "prepublish": "yarn build",
+    "test": "node ./run.js"
   },
   "files": [
     "*.js",
