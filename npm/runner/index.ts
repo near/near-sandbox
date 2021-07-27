@@ -56,6 +56,7 @@ const DefaultConfig = {
   rm: false
 }
 
+// TODO: detemine safe port range
 function assertPortRange(p: number): void {
   if (p < 3000 || p > 4000) {
     throw new Error("port is out of range, 3000-3999")
@@ -135,11 +136,10 @@ class SandboxServer {
         this.subprocess.on('exit',() => {
           debug(`Server with port ${this.port}: Died`);
         });
-        } catch (e: any) {
-          reject(e);
-        }
+      } catch (e: any) {
+        reject(e);
+      }
     })
-    
   }
 
   close(): void {
@@ -152,14 +152,23 @@ class SandboxServer {
   }
 }
 
+type TestRunnerFn = (s?: SandboxServer) => Promise<void> 
+
+export async function runFunction2(configOrFunction: TestRunnerFn | Partial<Config>, fn?: TestRunnerFn): Promise<void> {
+  // return runFunction(f)
+}
+
 export async function runFunction(f:  (s?: SandboxServer) => Promise<void>, config?: Partial<Config>): Promise<void> {
   let server = await SandboxServer.init(config);
   try {
     await f(await server.run());
-  } catch (e){
-    console.error(e)
-    console.error("Closing server with port " + server.port);
-  } finally {
+  } 
+  // catch (e){
+  //   console.error(e)
+  //   throw e;
+  // } 
+  finally {
+    debug("Closing server with port " + server.port);
     server.close();
   }
 }
