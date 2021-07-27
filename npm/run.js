@@ -5,7 +5,7 @@ const join = require("path").join;
 const fs = require("fs");
 
 const binary = getBinary();
-const binPath = binary.binaryPath
+const binPath = binary.binaryPath;
 
 function binExists() {
   return fs.existsSync(binPath);
