@@ -9,6 +9,7 @@
   "types": "dist/index.d.ts",
   "private": false,
   "dependencies": {
+    "bn.js": "^5.2.0",
     "fs-extra": "^10.0.0",
     "near-api-js": "^0.42.0",
     "near-sandbox": "0.0.3",

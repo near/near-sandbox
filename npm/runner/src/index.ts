@@ -1,5 +1,7 @@
 import { join } from "path";
 import tmpDir from "temp-dir";
+import { promises as fs } from "fs";
+import BN from "bn.js";
 
 import {
   asyncSpawn,
@@ -142,47 +144,103 @@ class SandboxServer {
     }
   }
 }
-export class SandboxRuntime {
-  private constructor(
-    private near: nearAPI.Near,
-    private masterAccount: nearAPI.Account
-  ) {}
 
-  
-  // get pubKey(): any {
-  //   return this.near.keyStore.masterKey.getPublicKey();
-  // }
+export class SandboxRuntime {
+  private static networkId = "sandbox";
+  private static rootAccountName = "test.near";
+  private near: nearAPI.Near;
+  private root: Account;
+  private masterKey: nearAPI.KeyPair;
+
+  private constructor(
+    near: nearAPI.Near,
+    root: nearAPI.Account,
+    masterKey: nearAPI.KeyPair,
+  ) {
+    this.near = near;
+    this.root = new Account(root);
+    this.masterKey = masterKey;
+  }
+
+  get pubKey(): nearAPI.utils.key_pair.PublicKey {
+    return this.masterKey.getPublicKey();
+  }
 
   static async connect(
     rpcAddr: string,
     homeDir: string
   ): Promise<SandboxRuntime> {
+    const keyFile = require(join(homeDir, "validator_key.json"));
+    const masterKey = nearAPI.utils.KeyPair.fromString(
+      keyFile.secret_key || keyFile.private_key
+    );
+    const pubKey = masterKey.getPublicKey();
+    const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
+    await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
     const near = await nearAPI.connect({
-      keyPath: join(homeDir, "validator_key.json"),
-      networkId: "sandbox",
+      keyStore,
+      networkId: this.networkId,
       nodeUrl: rpcAddr,
     });
-    const masterAccount = new nearAPI.Account(near.connection, "test.near");
-    const runtime = new SandboxRuntime(near, masterAccount);
+    const root = new nearAPI.Account(near.connection, "test.near");
+    const runtime = new SandboxRuntime(near, root, masterKey);
     return runtime;
   }
 
-  async createAccount(name: string): Promise<Account> {}
+  async createAccount(name: string): Promise<Account> {
+    await this.root.najAccount.createAccount(
+      name,
+      this.pubKey,
+      new BN(10).pow(new BN(25))
+    );
+    keyStore.setKey(this.networkId, name, this.masterKey);
+    const account = new nearAPI.Account(this.near.connection, name);
+    // TODO: rust-status-message has this stuff; do we need it?
+    // const accountUseContract = new nearAPI.Contract(
+    //   account,
+    //   contractAccountId,
+    //   contractMethods
+    // );
+    // const accountUseContract = new nearAPI.Contract(
+    //   account,
+    //   contractAccountId,
+    //   contractMethods
+    // );
+    return new Account(najAccount);
+  }
 
-  async createAndDeploy(name: string, wasm: string): Promise<ContractAccount> {}
+  async createAndDeploy(name: string, wasm: string): Promise<ContractAccount> {
+    const najContractAccount = await this.root.najAccount.createAndDeployContract(
+      name,
+      this.pubKey,
+      await fs.readFile(wasm),
+      new BN(10).pow(new BN(25))
+    );
+    return new ContractAccount(najContractAccount);
+  }
 
-  async getRoot(): Promise<Account>{}
-  async getAccount(s: string): Promise<Account>{}
+  getRoot(): Account {
+    return this.root;
+  }
+
+  async getAccount(s: string): Promise<Account> { }
 
 }
 
 type Args = { [key: string]: any };
+
 export class Account {
-  async call<T>(target: string, method: string, args: Args): T {}
+  najAccount: nearAPI.Account;
+
+  constructor(account: nearAPI.Account): Account {
+    this.najAccount = account;
+  }
+
+  async call<T>(target: string, method: string, args: Args): T { }
 }
 
 export class ContractAcount extends Account {
-  async view<T>(method: string, args: Args): T {}
+  async view<T>(method: string, args: Args): T { }
 }
 
 type TestRunnerFn = (s?: SandboxRuntime) => Promise<void>;
