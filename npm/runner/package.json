@@ -10,6 +10,7 @@
   "private": false,
   "dependencies": {
     "fs-extra": "^10.0.0",
+    "near-api-js": "^0.42.0",
     "near-sandbox": "0.0.3",
     "promisify-child-process": "^4.1.1",
     "rimraf": "^3.0.2",
