@@ -1,0 +1,24 @@
+{
+  "name": "near-sandbox",
+  "version": "0.0.3",
+  "description": "CLI tool for testing NEAR smart contracts",
+  "bin": {
+    "near-sandbox": "./run.js",
+    "sandbox": "./run.js"
+  },
+  "repository": "https://github.com/near/sandbox",
+  "author": "Willem Wyndham (willem@nearprotocol.com)",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "binary-install": "^0.1.1"
+  },
+  "scripts": {
+    "postinstall": "node ./install.js",
+    "preinstall": "node ./uninstall.js",
+    "test": "node ./run.js"
+  },
+  "files": [
+    "*.js"
+  ]
+}

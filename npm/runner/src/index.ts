@@ -1,40 +1,16 @@
-import { spawn as _spawn, Output }  from "promisify-child-process";
-import {ChildProcess, spawn} from "child_process";
-import * as os from "os";
+
 import { join }  from "path";
-import * as fs  from "fs/promises";
-import { PathLike } from "fs";
-import rimraf from "rimraf";
-import { promisify } from "util";
 import tmpDir from "temp-dir";
-// @ts-ignore
-import  getBinary  from "../getBinary";
 
-type ChildProcessPromise = Promise<ChildProcess & Promise<Output>>;
-
-const rm = promisify(rimraf);
-
-const runFile: string = getBinary().binaryPath;
-
-function debug(s: string | Buffer | null | undefined): void {
-  if (process.env["SANDBOX_DEBUG"]) {
-    console.error(s);
-  }
-}
-
-
-async function exists(d: PathLike): Promise<boolean> {
-  try { 
-    await fs.access(d);
-  } catch (e) {
-    return false;
-  }
-  return true;
-}
-
-async function asyncSpawn(...args: string[]): ChildProcessPromise {
-  return _spawn(runFile, args, {encoding: 'utf8'});
-}
+import {
+  asyncSpawn,
+  ChildProcessPromise,
+  debug,
+  exists,
+  rm,
+  spawn,
+  copyDir,
+} from "./utils";
 
 const readyRegex = /Server listening at ed25519/
 
@@ -43,18 +19,13 @@ interface Config {
   port: number,
   init: boolean,
   rm: boolean,
+  refDir: string | null
 }
 
 function getHomeDir(p: number = 3000): string {
   return join(tmpDir, 'sandbox', p.toString())
 }
 
-const DefaultConfig = {
-  homeDir: getHomeDir(),
-  port: 3000,
-  init: true,
-  rm: false
-}
 
 // TODO: detemine safe port range
 function assertPortRange(p: number): void {
@@ -65,7 +36,7 @@ function assertPortRange(p: number): void {
 class SandboxServer {
   private subprocess!: any;
   private static lastPort = 3000;
-  private config: Config;
+  private _config: Config;
 
   private static nextPort(): number {
     return SandboxServer.lastPort++;
@@ -77,16 +48,21 @@ class SandboxServer {
       homeDir: getHomeDir(port),
       port,
       init: true,
-      rm: false
+      rm: false,
+      refDir: null
     }
   }
 
   private constructor(config?: Partial<Config>){
-    this.config = {
+    this._config = {
       ...SandboxServer.defaultConfig(),
       ...config,
     };
     assertPortRange(this.port);
+  }
+  
+  get config(): Config {
+    return this._config;
   }
 
   get homeDir(): string {
@@ -103,6 +79,9 @@ class SandboxServer {
 
   static async init(config?: Partial<Config>): Promise<SandboxServer> {
     const server = new SandboxServer(config);
+    if (server.config.refDir) {
+      await copyDir(server.config.refDir, server.config.homeDir);
+    }
     if (await exists(server.homeDir) && server.config.init) {
       await rm(server.homeDir);
     }
@@ -114,23 +93,24 @@ class SandboxServer {
           throw new Error("Failed to spawn sandbox server");
         }
       } catch (e) {
-        console.log(e)
+        // TODO: should this throw?
+        console.log(e);
       }
     }
-    debug("created " + server.homeDir)
-    return server
+    debug("created " + server.homeDir);
+    return server;
   }
 
   private async spawn(command: string): ChildProcessPromise {
     return asyncSpawn('--home', this.homeDir, command);
   }
 
-  run(): Promise<SandboxServer> {
+  start(): Promise<SandboxServer> {
     return new Promise((resolve, reject) => {
       try {
         const args = ['--home', this.homeDir, "run", "--rpc-addr", this.rpcAddr];
         debug(`sending args, ${args.join(" ")}`)
-        this.subprocess = spawn(runFile, args);
+        this.subprocess = spawn(...args);
         this.subprocess.stderr.on('data', (data: any) => {
           if (readyRegex.test(`${data}`)) {
             resolve(this);
@@ -155,16 +135,22 @@ class SandboxServer {
   }
 }
 
+class SandboxRuntime {
+  constructor(private rpcAddr: string){}
+}
+
 type TestRunnerFn = (s?: SandboxRuntime) => Promise<void> 
 
-export async function runFunction2(configOrFunction: TestRunnerFn | Partial<Config>, fn?: TestRunnerFn): Promise<void> {
+async function runFunction2(configOrFunction: TestRunnerFn | Partial<Config>, fn?: TestRunnerFn): Promise<void> {
   // return runFunction(f)
 }
 
-export async function runFunction(f:  (s?: SandboxServer) => Promise<void>, config?: Partial<Config>): Promise<void> {
+async function runFunction(f:  TestRunnerFn, config?: Partial<Config>): Promise<SandboxServer> {
   let server = await SandboxServer.init(config);
+  await server.start(); // Wait until server is ready
+  const runtime = new SandboxRuntime(server.rpcAddr);
   try {
-    await f(await server.run());
+    await f(runtime);
   } 
   // catch (e){
   //   console.error(e)
@@ -174,10 +160,14 @@ export async function runFunction(f:  (s?: SandboxServer) => Promise<void>, conf
     debug("Closing server with port " + server.port);
     server.close();
   }
+  return server;
 }
 
-type SandboxRunner = ((f?: SandboxRuntime) => Promise<void>) => Promise<void>
+type SandboxRunner = (f: TestRunnerFn) => Promise<void>;
 
-export async function createSandbox(config: Partial<Config>, f: (s?: SandboxRuntime) => Promise<void>): Promise<SandboxRunner> {
-  
+export async function createSandbox(setupFn: TestRunnerFn): Promise<SandboxRunner> {
+  const server = await runFunction(setupFn);
+  return async (testFn:  TestRunnerFn) => {
+    await runFunction(testFn, {refDir: server.homeDir, init: false});
+  }
 };

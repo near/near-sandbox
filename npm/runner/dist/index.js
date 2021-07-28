@@ -1,66 +1,16 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runFunction = exports.runFunction2 = void 0;
-const promisify_child_process_1 = require("promisify-child-process");
-const child_process_1 = require("child_process");
+exports.createSandbox = void 0;
 const path_1 = require("path");
-const fs = __importStar(require("fs/promises"));
-const rimraf_1 = __importDefault(require("rimraf"));
-const util_1 = require("util");
 const temp_dir_1 = __importDefault(require("temp-dir"));
-// @ts-ignore
-const getBinary_1 = __importDefault(require("../getBinary"));
-const rm = util_1.promisify(rimraf_1.default);
-const runFile = getBinary_1.default().binaryPath;
-function debug(s) {
-    if (process.env["SANDBOX_DEBUG"]) {
-        console.error(s);
-    }
-}
-async function exists(d) {
-    try {
-        await fs.access(d);
-    }
-    catch (e) {
-        return false;
-    }
-    return true;
-}
-async function asyncSpawn(...args) {
-    return promisify_child_process_1.spawn(runFile, args, { encoding: 'utf8' });
-}
+const utils_1 = require("./utils");
 const readyRegex = /Server listening at ed25519/;
 function getHomeDir(p = 3000) {
     return path_1.join(temp_dir_1.default, 'sandbox', p.toString());
 }
-const DefaultConfig = {
-    homeDir: getHomeDir(),
-    port: 3000,
-    init: true,
-    rm: false
-};
 // TODO: detemine safe port range
 function assertPortRange(p) {
     if (p < 3000 || p > 4000) {
@@ -68,9 +18,11 @@ function assertPortRange(p) {
     }
 }
 class SandboxServer {
-    constructor(_config) {
-        this._config = _config;
-        this.config = Object.assign({}, SandboxServer.defaultConfig(), _config);
+    constructor(config) {
+        this._config = {
+            ...SandboxServer.defaultConfig(),
+            ...config,
+        };
         assertPortRange(this.port);
     }
     static nextPort() {
@@ -82,8 +34,12 @@ class SandboxServer {
             homeDir: getHomeDir(port),
             port,
             init: true,
-            rm: false
+            rm: false,
+            refDir: null
         };
+    }
+    get config() {
+        return this._config;
     }
     get homeDir() {
         return this.config.homeDir;
@@ -96,40 +52,44 @@ class SandboxServer {
     }
     static async init(config) {
         const server = new SandboxServer(config);
-        if (await exists(server.homeDir) && server.config.init) {
-            await rm(server.homeDir);
+        if (server.config.refDir) {
+            await utils_1.copyDir(server.config.refDir, server.config.homeDir);
+        }
+        if (await utils_1.exists(server.homeDir) && server.config.init) {
+            await utils_1.rm(server.homeDir);
         }
         if (server.config.init) {
             try {
                 let { stderr, code } = await server.spawn("init");
-                debug(stderr);
+                utils_1.debug(stderr);
                 if (code && code < 0) {
                     throw new Error("Failed to spawn sandbox server");
                 }
             }
             catch (e) {
+                // TODO: should this throw?
                 console.log(e);
             }
         }
-        debug("created " + server.homeDir);
+        utils_1.debug("created " + server.homeDir);
         return server;
     }
     async spawn(command) {
-        return asyncSpawn('--home', this.homeDir, command);
+        return utils_1.asyncSpawn('--home', this.homeDir, command);
     }
-    run() {
+    start() {
         return new Promise((resolve, reject) => {
             try {
                 const args = ['--home', this.homeDir, "run", "--rpc-addr", this.rpcAddr];
-                debug(`sending args, ${args.join(" ")}`);
-                this.subprocess = child_process_1.spawn(runFile, args);
+                utils_1.debug(`sending args, ${args.join(" ")}`);
+                this.subprocess = utils_1.spawn(...args);
                 this.subprocess.stderr.on('data', (data) => {
                     if (readyRegex.test(`${data}`)) {
                         resolve(this);
                     }
                 });
                 this.subprocess.on('exit', () => {
-                    debug(`Server with port ${this.port}: Died`);
+                    utils_1.debug(`Server with port ${this.port}: Died`);
                 });
             }
             catch (e) {
@@ -142,28 +102,42 @@ class SandboxServer {
             console.error(`Failed to kill child process with PID: ${this.subprocess.pid}`);
         }
         if (this.config.rm) {
-            rm(this.homeDir);
+            utils_1.rm(this.homeDir);
         }
     }
 }
 SandboxServer.lastPort = 3000;
+class SandboxRuntime {
+    constructor(rpcAddr) {
+        this.rpcAddr = rpcAddr;
+    }
+}
 async function runFunction2(configOrFunction, fn) {
     // return runFunction(f)
 }
-exports.runFunction2 = runFunction2;
 async function runFunction(f, config) {
     let server = await SandboxServer.init(config);
+    await server.start(); // Wait until server is ready
+    const runtime = new SandboxRuntime(server.rpcAddr);
     try {
-        await f(await server.run());
+        await f(runtime);
     }
     // catch (e){
     //   console.error(e)
     //   throw e;
     // } 
     finally {
-        debug("Closing server with port " + server.port);
+        utils_1.debug("Closing server with port " + server.port);
         server.close();
     }
+    return server;
 }
-exports.runFunction = runFunction;
+async function createSandbox(setupFn) {
+    const server = await runFunction(setupFn);
+    return async (testFn) => {
+        await runFunction(testFn, { refDir: server.homeDir, init: false });
+    };
+}
+exports.createSandbox = createSandbox;
+;
 //# sourceMappingURL=index.js.map
