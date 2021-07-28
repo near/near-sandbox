@@ -26,13 +26,15 @@ exports.copyDir = exports.debug = exports.spawn = exports.asyncSpawn = exports.e
 const fs = __importStar(require("fs/promises"));
 const util_1 = require("util");
 const child_process_1 = require("child_process");
+Object.defineProperty(exports, "spawn", { enumerable: true, get: function () { return child_process_1.spawn; } });
 const promisify_child_process_1 = require("promisify-child-process");
 const rimraf_1 = __importDefault(require("rimraf"));
 // @ts-ignore
 const getBinary_1 = __importDefault(require("near-sandbox/getBinary"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
 exports.rm = util_1.promisify(rimraf_1.default);
-exports.sandboxBinary = getBinary_1.default().binaryPath;
+const sandboxBinary = () => getBinary_1.default().binaryPath;
+exports.sandboxBinary = sandboxBinary;
 async function exists(d) {
     try {
         await fs.access(d);
@@ -44,13 +46,10 @@ async function exists(d) {
 }
 exports.exists = exists;
 async function asyncSpawn(...args) {
-    return promisify_child_process_1.spawn(exports.sandboxBinary, args, { encoding: 'utf8' });
+    console.log(exports.sandboxBinary());
+    return promisify_child_process_1.spawn(exports.sandboxBinary(), args, { encoding: 'utf8' });
 }
 exports.asyncSpawn = asyncSpawn;
-async function spawn(...args) {
-    return child_process_1.spawn(exports.sandboxBinary, args);
-}
-exports.spawn = spawn;
 function debug(s) {
     if (process.env["SANDBOX_DEBUG"]) {
         console.error(s);

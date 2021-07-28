@@ -11,6 +11,7 @@ import {
   rm,
   spawn,
   copyDir,
+  sandboxBinary,
 } from "./utils";
 
 import * as nearAPI from "near-api-js";
@@ -76,7 +77,7 @@ class SandboxServer {
   }
 
   get rpcAddr(): string {
-    return `0.0.0.0:${this.port}`;
+    return `http://localhost:${this.port}`;
   }
 
   static async init(config?: Partial<Config>): Promise<SandboxServer> {
@@ -118,7 +119,7 @@ class SandboxServer {
           this.rpcAddr,
         ];
         debug(`sending args, ${args.join(" ")}`);
-        this.subprocess = spawn(...args);
+        this.subprocess = spawn(sandboxBinary(), args);
         this.subprocess.stderr.on("data", (data: any) => {
           if (readyRegex.test(`${data}`)) {
             resolve(this);
@@ -156,6 +157,7 @@ export class SandboxRuntime {
     near: nearAPI.Near,
     root: nearAPI.Account,
     masterKey: nearAPI.KeyPair,
+    public homeDir: string,
   ) {
     this.near = near;
     this.root = new Account(root);
@@ -183,39 +185,35 @@ export class SandboxRuntime {
       nodeUrl: rpcAddr,
     });
     const root = new nearAPI.Account(near.connection, "test.near");
-    const runtime = new SandboxRuntime(near, root, masterKey);
+    const runtime = new SandboxRuntime(near, root, masterKey, homeDir);
     return runtime;
   }
 
   async createAccount(name: string): Promise<Account> {
+    const pubKey = await this.near.connection.signer.createKey(
+      name,
+      SandboxRuntime.networkId
+    );
     await this.root.najAccount.createAccount(
       name,
-      this.pubKey,
+      pubKey,
       new BN(10).pow(new BN(25))
     );
-    keyStore.setKey(this.networkId, name, this.masterKey);
-    const account = new nearAPI.Account(this.near.connection, name);
-    // TODO: rust-status-message has this stuff; do we need it?
-    // const accountUseContract = new nearAPI.Contract(
-    //   account,
-    //   contractAccountId,
-    //   contractMethods
-    // );
-    // const accountUseContract = new nearAPI.Contract(
-    //   account,
-    //   contractAccountId,
-    //   contractMethods
-    // );
-    return new Account(najAccount);
+    return this.getAccount(name);
   }
 
   async createAndDeploy(name: string, wasm: string): Promise<ContractAccount> {
-    const najContractAccount = await this.root.najAccount.createAndDeployContract(
+    const pubKey = await this.near.connection.signer.createKey(
       name,
-      this.pubKey,
-      await fs.readFile(wasm),
-      new BN(10).pow(new BN(25))
+      SandboxRuntime.networkId
     );
+    const najContractAccount =
+      await this.root.najAccount.createAndDeployContract(
+        name,
+        pubKey,
+        await fs.readFile(wasm),
+        new BN(10).pow(new BN(25))
+      );
     return new ContractAccount(najContractAccount);
   }
 
@@ -223,8 +221,15 @@ export class SandboxRuntime {
     return this.root;
   }
 
-  async getAccount(s: string): Promise<Account> { }
+  getAccount(name: string): Account {
+    return new Account(new nearAPI.Account(this.near.connection, name));
+  }
 
+  getContractAccount(name: string): ContractAccount {
+    return new ContractAccount(new nearAPI.Account(this.near.connection, name));
+  }
+
+  
 }
 
 type Args = { [key: string]: any };
@@ -232,18 +237,45 @@ type Args = { [key: string]: any };
 export class Account {
   najAccount: nearAPI.Account;
 
-  constructor(account: nearAPI.Account): Account {
+  constructor(account: nearAPI.Account) {
     this.najAccount = account;
   }
 
-  async call<T>(target: string, method: string, args: Args): T { }
+  async call<T>(
+    contractId: string,
+    methodName: string,
+    args: Args = {},
+    gas?: BN,
+    attachedDeposit?: BN
+  ): Promise<T> {
+    return <T>(<unknown>(
+      await this.najAccount.functionCall({
+        contractId,
+        methodName,
+        args,
+        gas,
+        attachedDeposit,
+      })
+    ).transaction_outcome.outcome);
+  }
 }
 
-export class ContractAcount extends Account {
-  async view<T>(method: string, args: Args): T { }
+export class ContractAccount extends Account {
+  async view<T>(method: string, args?: Args): Promise<T> {
+    return <T>(
+      (<unknown>(
+        (await this.najAccount.viewFunction(
+            this.najAccount.accountId,
+            method,
+            args
+          )
+        ).transaction_outcome.outcome
+      ))
+    );
+  }
 }
 
-type TestRunnerFn = (s?: SandboxRuntime) => Promise<void>;
+export type TestRunnerFn = (s: SandboxRuntime) => Promise<void>;
 
 async function runFunction2(
   configOrFunction: TestRunnerFn | Partial<Config>,
@@ -255,10 +287,10 @@ async function runFunction2(
 async function runFunction(
   f: TestRunnerFn,
   config?: Partial<Config>
-): Promise<SandboxServer> {
+): Promise<SandboxRuntime> {
   let server = await SandboxServer.init(config);
   await server.start(); // Wait until server is ready
-  const runtime = new SandboxRuntime(server.rpcAddr);
+  const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir);
   try {
     await f(runtime);
   } finally {
@@ -269,16 +301,16 @@ async function runFunction(
     debug("Closing server with port " + server.port);
     server.close();
   }
-  return server;
+  return runtime;
 }
 
-type SandboxRunner = (f: TestRunnerFn) => Promise<void>;
+export type SandboxRunner = (f: TestRunnerFn) => Promise<void>;
 
 export async function createSandbox(
   setupFn: TestRunnerFn
 ): Promise<SandboxRunner> {
-  const server = await runFunction(setupFn);
+  const runtime = await runFunction(setupFn);
   return async (testFn: TestRunnerFn) => {
-    await runFunction(testFn, { refDir: server.homeDir, init: false });
+    await runFunction(testFn, { refDir: runtime.homeDir, init: false });
   };
 }

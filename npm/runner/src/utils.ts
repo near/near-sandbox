@@ -11,7 +11,7 @@ import fs_extra from "fs-extra";
 
 export const rm = promisify(rimraf);
 
-export const sandboxBinary: string = getBinary().binaryPath;
+export const sandboxBinary: () => string = () => getBinary().binaryPath;
 
 export async function exists(d: PathLike): Promise<boolean> {
   try { 
@@ -25,12 +25,16 @@ export async function exists(d: PathLike): Promise<boolean> {
 export type ChildProcessPromise = Promise<ChildProcess & Promise<Output>>;
 
 export async function asyncSpawn(...args: string[]): ChildProcessPromise {
-  return _asyncSpawn(sandboxBinary, args, {encoding: 'utf8'});
+  console.log(sandboxBinary())
+  return _asyncSpawn(sandboxBinary(), args, {encoding: 'utf8'});
 }
 
-export async function spawn(...args: string[]) {
-  return _spawn(sandboxBinary, args);
-}
+// export async function spawn(...args: string[]) {
+//   console.log(sandboxBinary())
+//   console.log(getBinary().binaryPath)
+//   return _;
+// }
+export {_spawn as spawn}
 
 export function debug(s: string | Buffer | null | undefined): void {
   if (process.env["SANDBOX_DEBUG"]) {

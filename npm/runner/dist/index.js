@@ -1,15 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createSandbox = void 0;
+exports.createSandbox = exports.ContractAccount = exports.Account = exports.SandboxRuntime = void 0;
 const path_1 = require("path");
 const temp_dir_1 = __importDefault(require("temp-dir"));
+const fs_1 = require("fs");
+const bn_js_1 = __importDefault(require("bn.js"));
 const utils_1 = require("./utils");
+const nearAPI = __importStar(require("near-api-js"));
 const readyRegex = /Server listening at ed25519/;
 function getHomeDir(p = 3000) {
-    return path_1.join(temp_dir_1.default, 'sandbox', p.toString());
+    return path_1.join(temp_dir_1.default, "sandbox", p.toString());
 }
 // TODO: detemine safe port range
 function assertPortRange(p) {
@@ -35,7 +57,7 @@ class SandboxServer {
             port,
             init: true,
             rm: false,
-            refDir: null
+            refDir: null,
         };
     }
     get config() {
@@ -48,14 +70,14 @@ class SandboxServer {
         return this.config.port;
     }
     get rpcAddr() {
-        return `0.0.0.0:${this.port}`;
+        return `http://localhost:${this.port}`;
     }
     static async init(config) {
         const server = new SandboxServer(config);
         if (server.config.refDir) {
             await utils_1.copyDir(server.config.refDir, server.config.homeDir);
         }
-        if (await utils_1.exists(server.homeDir) && server.config.init) {
+        if ((await utils_1.exists(server.homeDir)) && server.config.init) {
             await utils_1.rm(server.homeDir);
         }
         if (server.config.init) {
@@ -75,20 +97,26 @@ class SandboxServer {
         return server;
     }
     async spawn(command) {
-        return utils_1.asyncSpawn('--home', this.homeDir, command);
+        return utils_1.asyncSpawn("--home", this.homeDir, command);
     }
     start() {
         return new Promise((resolve, reject) => {
             try {
-                const args = ['--home', this.homeDir, "run", "--rpc-addr", this.rpcAddr];
+                const args = [
+                    "--home",
+                    this.homeDir,
+                    "run",
+                    "--rpc-addr",
+                    this.rpcAddr,
+                ];
                 utils_1.debug(`sending args, ${args.join(" ")}`);
-                this.subprocess = utils_1.spawn(...args);
-                this.subprocess.stderr.on('data', (data) => {
+                this.subprocess = utils_1.spawn(utils_1.sandboxBinary(), args);
+                this.subprocess.stderr.on("data", (data) => {
                     if (readyRegex.test(`${data}`)) {
                         resolve(this);
                     }
                 });
-                this.subprocess.on('exit', () => {
+                this.subprocess.on("exit", () => {
                     utils_1.debug(`Server with port ${this.port}: Died`);
                 });
             }
@@ -98,7 +126,7 @@ class SandboxServer {
         });
     }
     close() {
-        if (!this.subprocess.kill('SIGINT')) {
+        if (!this.subprocess.kill("SIGINT")) {
             console.error(`Failed to kill child process with PID: ${this.subprocess.pid}`);
         }
         if (this.config.rm) {
@@ -108,36 +136,99 @@ class SandboxServer {
 }
 SandboxServer.lastPort = 3000;
 class SandboxRuntime {
-    constructor(rpcAddr) {
-        this.rpcAddr = rpcAddr;
+    constructor(near, root, masterKey, homeDir) {
+        this.homeDir = homeDir;
+        this.near = near;
+        this.root = new Account(root);
+        this.masterKey = masterKey;
+    }
+    get pubKey() {
+        return this.masterKey.getPublicKey();
+    }
+    static async connect(rpcAddr, homeDir) {
+        const keyFile = require(path_1.join(homeDir, "validator_key.json"));
+        const masterKey = nearAPI.utils.KeyPair.fromString(keyFile.secret_key || keyFile.private_key);
+        const pubKey = masterKey.getPublicKey();
+        const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
+        await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
+        const near = await nearAPI.connect({
+            keyStore,
+            networkId: this.networkId,
+            nodeUrl: rpcAddr,
+        });
+        const root = new nearAPI.Account(near.connection, "test.near");
+        const runtime = new SandboxRuntime(near, root, masterKey, homeDir);
+        return runtime;
+    }
+    async createAccount(name) {
+        const pubKey = await this.near.connection.signer.createKey(name, SandboxRuntime.networkId);
+        await this.root.najAccount.createAccount(name, pubKey, new bn_js_1.default(10).pow(new bn_js_1.default(25)));
+        return this.getAccount(name);
+    }
+    async createAndDeploy(name, wasm) {
+        const pubKey = await this.near.connection.signer.createKey(name, SandboxRuntime.networkId);
+        const najContractAccount = await this.root.najAccount.createAndDeployContract(name, pubKey, await fs_1.promises.readFile(wasm), new bn_js_1.default(10).pow(new bn_js_1.default(25)));
+        return new ContractAccount(najContractAccount);
+    }
+    getRoot() {
+        return this.root;
+    }
+    getAccount(name) {
+        return new Account(new nearAPI.Account(this.near.connection, name));
+    }
+    getContractAccount(name) {
+        return new ContractAccount(new nearAPI.Account(this.near.connection, name));
     }
 }
+exports.SandboxRuntime = SandboxRuntime;
+SandboxRuntime.networkId = "sandbox";
+SandboxRuntime.rootAccountName = "test.near";
+class Account {
+    constructor(account) {
+        this.najAccount = account;
+    }
+    async call(contractId, methodName, args = {}, gas, attachedDeposit) {
+        return (await this.najAccount.functionCall({
+            contractId,
+            methodName,
+            args,
+            gas,
+            attachedDeposit,
+        })).transaction_outcome.outcome;
+    }
+}
+exports.Account = Account;
+class ContractAccount extends Account {
+    async view(method, args) {
+        return ((await this.najAccount.viewFunction(this.najAccount.accountId, method, args)).transaction_outcome.outcome);
+    }
+}
+exports.ContractAccount = ContractAccount;
 async function runFunction2(configOrFunction, fn) {
     // return runFunction(f)
 }
 async function runFunction(f, config) {
     let server = await SandboxServer.init(config);
     await server.start(); // Wait until server is ready
-    const runtime = new SandboxRuntime(server.rpcAddr);
+    const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir);
     try {
         await f(runtime);
     }
-    // catch (e){
-    //   console.error(e)
-    //   throw e;
-    // } 
     finally {
+        // catch (e){
+        //   console.error(e)
+        //   throw e;
+        // }
         utils_1.debug("Closing server with port " + server.port);
         server.close();
     }
-    return server;
+    return runtime;
 }
 async function createSandbox(setupFn) {
-    const server = await runFunction(setupFn);
+    const runtime = await runFunction(setupFn);
     return async (testFn) => {
-        await runFunction(testFn, { refDir: server.homeDir, init: false });
+        await runFunction(testFn, { refDir: runtime.homeDir, init: false });
     };
 }
 exports.createSandbox = createSandbox;
-;
 //# sourceMappingURL=index.js.map
