@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runFunction = void 0;
+exports.runFunction = exports.runFunction2 = void 0;
 const promisify_child_process_1 = require("promisify-child-process");
 const child_process_1 = require("child_process");
 const path_1 = require("path");
@@ -61,6 +61,7 @@ const DefaultConfig = {
     init: true,
     rm: false
 };
+// TODO: detemine safe port range
 function assertPortRange(p) {
     if (p < 3000 || p > 4000) {
         throw new Error("port is out of range, 3000-3999");
@@ -146,16 +147,21 @@ class SandboxServer {
     }
 }
 SandboxServer.lastPort = 3000;
+async function runFunction2(configOrFunction, fn) {
+    // return runFunction(f)
+}
+exports.runFunction2 = runFunction2;
 async function runFunction(f, config) {
     let server = await SandboxServer.init(config);
     try {
         await f(await server.run());
     }
-    catch (e) {
-        console.error(e);
-        console.error("Closing server with port " + server.port);
-    }
+    // catch (e){
+    //   console.error(e)
+    //   throw e;
+    // } 
     finally {
+        debug("Closing server with port " + server.port);
         server.close();
     }
 }

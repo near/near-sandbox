@@ -20,5 +20,7 @@ declare class SandboxServer {
     run(): Promise<SandboxServer>;
     close(): void;
 }
+declare type TestRunnerFn = (s?: SandboxServer) => Promise<void>;
+export declare function runFunction2(configOrFunction: TestRunnerFn | Partial<Config>, fn?: TestRunnerFn): Promise<void>;
 export declare function runFunction(f: (s?: SandboxServer) => Promise<void>, config?: Partial<Config>): Promise<void>;
 export {};

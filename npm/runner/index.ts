@@ -81,8 +81,11 @@ class SandboxServer {
     }
   }
 
-  private constructor(private _config?: Partial<Config>){
-    this.config = Object.assign({}, SandboxServer.defaultConfig(), _config);
+  private constructor(config?: Partial<Config>){
+    this.config = {
+      ...SandboxServer.defaultConfig(),
+      ...config,
+    };
     assertPortRange(this.port);
   }
 
@@ -152,7 +155,7 @@ class SandboxServer {
   }
 }
 
-type TestRunnerFn = (s?: SandboxServer) => Promise<void> 
+type TestRunnerFn = (s?: SandboxRuntime) => Promise<void> 
 
 export async function runFunction2(configOrFunction: TestRunnerFn | Partial<Config>, fn?: TestRunnerFn): Promise<void> {
   // return runFunction(f)
@@ -172,3 +175,9 @@ export async function runFunction(f:  (s?: SandboxServer) => Promise<void>, conf
     server.close();
   }
 }
+
+type SandboxRunner = ((f?: SandboxRuntime) => Promise<void>) => Promise<void>
+
+export async function createSandbox(config: Partial<Config>, f: (s?: SandboxRuntime) => Promise<void>): Promise<SandboxRunner> {
+  
+};
