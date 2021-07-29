@@ -72,6 +72,9 @@ class SandboxServer {
     get rpcAddr() {
         return `http://localhost:${this.port}`;
     }
+    get internalRpcAddr() {
+        return `0.0.0.0:${this.port}`;
+    }
     static async init(config) {
         const server = new SandboxServer(config);
         if (server.config.refDir) {
@@ -107,7 +110,7 @@ class SandboxServer {
                     this.homeDir,
                     "run",
                     "--rpc-addr",
-                    this.rpcAddr,
+                    this.internalRpcAddr,
                 ];
                 utils_1.debug(`sending args, ${args.join(" ")}`);
                 this.subprocess = utils_1.spawn(utils_1.sandboxBinary(), args);
@@ -145,12 +148,14 @@ class SandboxRuntime {
     get pubKey() {
         return this.masterKey.getPublicKey();
     }
-    static async connect(rpcAddr, homeDir) {
+    static async connect(rpcAddr, homeDir, init) {
         const keyFile = require(path_1.join(homeDir, "validator_key.json"));
         const masterKey = nearAPI.utils.KeyPair.fromString(keyFile.secret_key || keyFile.private_key);
         const pubKey = masterKey.getPublicKey();
-        const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
-        await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
+        const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(homeDir);
+        if (init) {
+            await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
+        }
         const near = await nearAPI.connect({
             keyStore,
             networkId: this.networkId,
@@ -165,9 +170,9 @@ class SandboxRuntime {
         await this.root.najAccount.createAccount(name, pubKey, new bn_js_1.default(10).pow(new bn_js_1.default(25)));
         return this.getAccount(name);
     }
-    async createAndDeploy(name, wasm) {
+    async createAndDeploy(name, wasm, initialDeposit = SandboxRuntime.INITIAL_DEPOSIT) {
         const pubKey = await this.near.connection.signer.createKey(name, SandboxRuntime.networkId);
-        const najContractAccount = await this.root.najAccount.createAndDeployContract(name, pubKey, await fs_1.promises.readFile(wasm), new bn_js_1.default(10).pow(new bn_js_1.default(25)));
+        const najContractAccount = await this.root.najAccount.createAndDeployContract(name, pubKey, await fs_1.promises.readFile(wasm), initialDeposit);
         return new ContractAccount(najContractAccount);
     }
     getRoot() {
@@ -183,6 +188,7 @@ class SandboxRuntime {
 exports.SandboxRuntime = SandboxRuntime;
 SandboxRuntime.networkId = "sandbox";
 SandboxRuntime.rootAccountName = "test.near";
+SandboxRuntime.INITIAL_DEPOSIT = new bn_js_1.default(10).pow(new bn_js_1.default(25));
 class Account {
     constructor(account) {
         this.najAccount = account;
@@ -210,7 +216,7 @@ async function runFunction2(configOrFunction, fn) {
 async function runFunction(f, config) {
     let server = await SandboxServer.init(config);
     await server.start(); // Wait until server is ready
-    const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir);
+    const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir, config === null || config === void 0 ? void 0 : config.init);
     try {
         await f(runtime);
     }

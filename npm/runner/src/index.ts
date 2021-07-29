@@ -80,6 +80,10 @@ class SandboxServer {
     return `http://localhost:${this.port}`;
   }
 
+  private get internalRpcAddr(): string {
+    return `0.0.0.0:${this.port}`;
+  }
+
   static async init(config?: Partial<Config>): Promise<SandboxServer> {
     const server = new SandboxServer(config);
     if (server.config.refDir) {
@@ -116,7 +120,7 @@ class SandboxServer {
           this.homeDir,
           "run",
           "--rpc-addr",
-          this.rpcAddr,
+          this.internalRpcAddr,
         ];
         debug(`sending args, ${args.join(" ")}`);
         this.subprocess = spawn(sandboxBinary(), args);
@@ -149,6 +153,7 @@ class SandboxServer {
 export class SandboxRuntime {
   private static networkId = "sandbox";
   private static rootAccountName = "test.near";
+  private static readonly INITIAL_DEPOSIT = new BN(10).pow(new BN(25));
   private near: nearAPI.Near;
   private root: Account;
   private masterKey: nearAPI.KeyPair;
@@ -157,7 +162,7 @@ export class SandboxRuntime {
     near: nearAPI.Near,
     root: nearAPI.Account,
     masterKey: nearAPI.KeyPair,
-    public homeDir: string,
+    public homeDir: string
   ) {
     this.near = near;
     this.root = new Account(root);
@@ -170,15 +175,18 @@ export class SandboxRuntime {
 
   static async connect(
     rpcAddr: string,
-    homeDir: string
+    homeDir: string, 
+    init?: boolean,
   ): Promise<SandboxRuntime> {
     const keyFile = require(join(homeDir, "validator_key.json"));
     const masterKey = nearAPI.utils.KeyPair.fromString(
       keyFile.secret_key || keyFile.private_key
     );
     const pubKey = masterKey.getPublicKey();
-    const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
-    await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
+    const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(homeDir);
+    if (init){
+      await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
+    }
     const near = await nearAPI.connect({
       keyStore,
       networkId: this.networkId,
@@ -202,7 +210,11 @@ export class SandboxRuntime {
     return this.getAccount(name);
   }
 
-  async createAndDeploy(name: string, wasm: string): Promise<ContractAccount> {
+  async createAndDeploy(
+    name: string,
+    wasm: string,
+    initialDeposit: BN = SandboxRuntime.INITIAL_DEPOSIT
+  ): Promise<ContractAccount> {
     const pubKey = await this.near.connection.signer.createKey(
       name,
       SandboxRuntime.networkId
@@ -212,7 +224,7 @@ export class SandboxRuntime {
         name,
         pubKey,
         await fs.readFile(wasm),
-        new BN(10).pow(new BN(25))
+        initialDeposit,
       );
     return new ContractAccount(najContractAccount);
   }
@@ -228,8 +240,6 @@ export class SandboxRuntime {
   getContractAccount(name: string): ContractAccount {
     return new ContractAccount(new nearAPI.Account(this.near.connection, name));
   }
-
-  
 }
 
 type Args = { [key: string]: any };
@@ -264,7 +274,8 @@ export class ContractAccount extends Account {
   async view<T>(method: string, args?: Args): Promise<T> {
     return <T>(
       (<unknown>(
-        (await this.najAccount.viewFunction(
+        (
+          await this.najAccount.viewFunction(
             this.najAccount.accountId,
             method,
             args
@@ -290,7 +301,7 @@ async function runFunction(
 ): Promise<SandboxRuntime> {
   let server = await SandboxServer.init(config);
   await server.start(); // Wait until server is ready
-  const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir);
+  const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir, config?.init);
   try {
     await f(runtime);
   } finally {

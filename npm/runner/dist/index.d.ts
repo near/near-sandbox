@@ -4,14 +4,15 @@ export declare class SandboxRuntime {
     homeDir: string;
     private static networkId;
     private static rootAccountName;
+    private static readonly INITIAL_DEPOSIT;
     private near;
     private root;
     private masterKey;
     private constructor();
     get pubKey(): nearAPI.utils.key_pair.PublicKey;
-    static connect(rpcAddr: string, homeDir: string): Promise<SandboxRuntime>;
+    static connect(rpcAddr: string, homeDir: string, init?: boolean): Promise<SandboxRuntime>;
     createAccount(name: string): Promise<Account>;
-    createAndDeploy(name: string, wasm: string): Promise<ContractAccount>;
+    createAndDeploy(name: string, wasm: string, initialDeposit?: BN): Promise<ContractAccount>;
     getRoot(): Account;
     getAccount(name: string): Account;
     getContractAccount(name: string): ContractAccount;
