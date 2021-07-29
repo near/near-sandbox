@@ -46,7 +46,7 @@ async function exists(d) {
 }
 exports.exists = exists;
 async function asyncSpawn(...args) {
-    console.log(exports.sandboxBinary());
+    debug(`Sandbox Binary found: ${exports.sandboxBinary()}`);
     return promisify_child_process_1.spawn(exports.sandboxBinary(), args, { encoding: 'utf8' });
 }
 exports.asyncSpawn = asyncSpawn;

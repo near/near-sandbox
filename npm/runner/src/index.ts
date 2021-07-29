@@ -1,155 +1,12 @@
 import { join } from "path";
-import tmpDir from "temp-dir";
 import { promises as fs } from "fs";
+
 import BN from "bn.js";
-
-import {
-  asyncSpawn,
-  ChildProcessPromise,
-  debug,
-  exists,
-  rm,
-  spawn,
-  copyDir,
-  sandboxBinary,
-} from "./utils";
-
 import * as nearAPI from "near-api-js";
 
-const readyRegex = /Server listening at ed25519| stats: /;
 
-interface Config {
-  homeDir: string;
-  port: number;
-  init: boolean;
-  rm: boolean;
-  refDir: string | null;
-}
-
-function getHomeDir(p: number = 3000): string {
-  return join(tmpDir, "sandbox", p.toString());
-}
-
-// TODO: detemine safe port range
-function assertPortRange(p: number): void {
-  if (p < 4000 || p > 5000) {
-    throw new Error("port is out of range, 3000-3999");
-  }
-}
-class SandboxServer {
-  private subprocess!: any;
-  private static lastPort = 4000;
-  private _config: Config;
-
-  private static nextPort(): number {
-    return SandboxServer.lastPort++;
-  }
-
-  private static defaultConfig(): Config {
-    const port = SandboxServer.nextPort();
-    return {
-      homeDir: getHomeDir(port),
-      port,
-      init: true,
-      rm: false,
-      refDir: null,
-    };
-  }
-
-  private constructor(config?: Partial<Config>) {
-    this._config = {
-      ...SandboxServer.defaultConfig(),
-      ...config,
-    };
-    assertPortRange(this.port);
-  }
-
-  get config(): Config {
-    return this._config;
-  }
-
-  get homeDir(): string {
-    return this.config.homeDir;
-  }
-
-  get port(): number {
-    return this.config.port;
-  }
-
-  get rpcAddr(): string {
-    return `http://localhost:${this.port}`;
-  }
-
-  private get internalRpcAddr(): string {
-    return `0.0.0.0:${this.port}`;
-  }
-
-  static async init(config?: Partial<Config>): Promise<SandboxServer> {
-    const server = new SandboxServer(config);
-    if (server.config.refDir) {
-      await copyDir(server.config.refDir, server.config.homeDir);
-    }
-    if ((await exists(server.homeDir)) && server.config.init) {
-      await rm(server.homeDir);
-    }
-    if (server.config.init) {
-      try {
-        let { stderr, code } = await server.spawn("init");
-        debug(stderr);
-        if (code && code < 0) {
-          throw new Error("Failed to spawn sandbox server");
-        }
-      } catch (e) {
-        // TODO: should this throw?
-        console.log(e);
-      }
-    }
-    debug("created " + server.homeDir);
-    return server;
-  }
-
-  private async spawn(command: string): ChildProcessPromise {
-    return asyncSpawn("--home", this.homeDir, command);
-  }
-
-  start(): Promise<SandboxServer> {
-    return new Promise((resolve, reject) => {
-      try {
-        const args = [
-          "--home",
-          this.homeDir,
-          "run",
-          "--rpc-addr",
-          this.internalRpcAddr,
-        ];
-        debug(`sending args, ${args.join(" ")}`);
-        this.subprocess = spawn(sandboxBinary(), args);
-        this.subprocess.stderr.on("data", (data: any) => {
-          debug(`${data}`);
-          if (readyRegex.test(`${data}`)) {
-            resolve(this);
-          }
-        });
-        this.subprocess.on("exit", () => {
-          debug(`Server with port ${this.port}: Died`);
-        });
-      } catch (e: any) {
-        reject(e);
-      }
-    });
-  }
-
-  close(): void {
-    if (!this.subprocess.kill("SIGINT")) {
-      console.error(
-        `Failed to kill child process with PID: ${this.subprocess.pid}`
-      );
-    }
-    if (this.config.rm) {
-      rm(this.homeDir);
-    }
-  }
-}
+import { debug } from "./utils";
+import { Config, SandboxServer } from "./server";
 
 export class SandboxRuntime {
   private static networkId = "sandbox";
@@ -177,18 +34,19 @@ export class SandboxRuntime {
   static async connect(
     rpcAddr: string,
     homeDir: string,
-    init?: boolean,
+    init?: boolean
   ): Promise<SandboxRuntime> {
     const keyFile = require(join(homeDir, "validator_key.json"));
     const masterKey = nearAPI.utils.KeyPair.fromString(
       keyFile.secret_key || keyFile.private_key
     );
     const pubKey = masterKey.getPublicKey();
-    const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(homeDir);
+    const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(
+      homeDir
+    );
     if (init) {
       await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
     }
-    console.log('keyStore', keyStore);
     const near = await nearAPI.connect({
       keyStore,
       networkId: this.networkId,
@@ -226,7 +84,7 @@ export class SandboxRuntime {
         name,
         pubKey,
         await fs.readFile(wasm),
-        initialDeposit,
+        initialDeposit
       );
     return new ContractAccount(najContractAccount);
   }
@@ -253,38 +111,49 @@ export class Account {
     this.najAccount = account;
   }
 
+  get connection(): nearAPI.Connection {
+    return this.najAccount.connection;
+  }
+
+  get accountId(): string {
+    return this.najAccount.accountId;
+  }
+
   async call<T>(
     contractId: string,
     methodName: string,
     args: Args = {},
     gas?: BN,
     attachedDeposit?: BN
-  ): Promise<T> {
-    return <T>(<unknown>(
-      await this.najAccount.functionCall({
+  ): Promise<any> {
+    const oldLog = console.log;
+    global.console.log = () => {};
+    const ret = await this.najAccount.functionCall({
         contractId,
         methodName,
         args,
         gas,
         attachedDeposit,
-      })
-    ).transaction_outcome.outcome);
+      });
+    global.console.log = oldLog;
+    return ret;
   }
+
 }
 
 export class ContractAccount extends Account {
-  async view<T>(method: string, args?: Args): Promise<T> {
-    return <T>(
-      (<unknown>(
-        (
-          await this.najAccount.viewFunction(
-            this.najAccount.accountId,
-            method,
-            args
-          )
-        ).transaction_outcome.outcome
-      ))
-    );
+  async view<T>(method: string, args?: Args): Promise<any> {
+    const res:any = await this.connection.provider.query({
+      request_type: 'call_function',
+      account_id: this.accountId,
+      method_name: method,
+      args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
+      finality: 'optimistic'
+    });
+    if (res.result) {
+      res.result = JSON.parse(Buffer.from(res.result).toString())
+    }
+    return res;
   }
 }
 

@@ -25,7 +25,7 @@ export async function exists(d: PathLike): Promise<boolean> {
 export type ChildProcessPromise = Promise<ChildProcess & Promise<Output>>;
 
 export async function asyncSpawn(...args: string[]): ChildProcessPromise {
-  console.log(sandboxBinary())
+  debug(`Sandbox Binary found: ${sandboxBinary()}`);
   return _asyncSpawn(sandboxBinary(), args, {encoding: 'utf8'});
 }
 

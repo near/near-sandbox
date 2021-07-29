@@ -23,10 +23,12 @@ declare type Args = {
 export declare class Account {
     najAccount: nearAPI.Account;
     constructor(account: nearAPI.Account);
-    call<T>(contractId: string, methodName: string, args?: Args, gas?: BN, attachedDeposit?: BN): Promise<T>;
+    get connection(): nearAPI.Connection;
+    get accountId(): string;
+    call<T>(contractId: string, methodName: string, args?: Args, gas?: BN, attachedDeposit?: BN): Promise<any>;
 }
 export declare class ContractAccount extends Account {
-    view<T>(method: string, args?: Args): Promise<T>;
+    view<T>(method: string, args?: Args): Promise<any>;
 }
 export declare type TestRunnerFn = (s: SandboxRuntime) => Promise<void>;
 export declare type SandboxRunner = (f: TestRunnerFn) => Promise<void>;

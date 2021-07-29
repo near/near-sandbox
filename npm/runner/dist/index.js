@@ -24,121 +24,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createSandbox = exports.ContractAccount = exports.Account = exports.SandboxRuntime = void 0;
 const path_1 = require("path");
-const temp_dir_1 = __importDefault(require("temp-dir"));
 const fs_1 = require("fs");
 const bn_js_1 = __importDefault(require("bn.js"));
-const utils_1 = require("./utils");
 const nearAPI = __importStar(require("near-api-js"));
-const readyRegex = /Server listening at ed25519| stats: /;
-function getHomeDir(p = 3000) {
-    return path_1.join(temp_dir_1.default, "sandbox", p.toString());
-}
-// TODO: detemine safe port range
-function assertPortRange(p) {
-    if (p < 4000 || p > 5000) {
-        throw new Error("port is out of range, 3000-3999");
-    }
-}
-class SandboxServer {
-    constructor(config) {
-        this._config = {
-            ...SandboxServer.defaultConfig(),
-            ...config,
-        };
-        assertPortRange(this.port);
-    }
-    static nextPort() {
-        return SandboxServer.lastPort++;
-    }
-    static defaultConfig() {
-        const port = SandboxServer.nextPort();
-        return {
-            homeDir: getHomeDir(port),
-            port,
-            init: true,
-            rm: false,
-            refDir: null,
-        };
-    }
-    get config() {
-        return this._config;
-    }
-    get homeDir() {
-        return this.config.homeDir;
-    }
-    get port() {
-        return this.config.port;
-    }
-    get rpcAddr() {
-        return `http://localhost:${this.port}`;
-    }
-    get internalRpcAddr() {
-        return `0.0.0.0:${this.port}`;
-    }
-    static async init(config) {
-        const server = new SandboxServer(config);
-        if (server.config.refDir) {
-            await utils_1.copyDir(server.config.refDir, server.config.homeDir);
-        }
-        if ((await utils_1.exists(server.homeDir)) && server.config.init) {
-            await utils_1.rm(server.homeDir);
-        }
-        if (server.config.init) {
-            try {
-                let { stderr, code } = await server.spawn("init");
-                utils_1.debug(stderr);
-                if (code && code < 0) {
-                    throw new Error("Failed to spawn sandbox server");
-                }
-            }
-            catch (e) {
-                // TODO: should this throw?
-                console.log(e);
-            }
-        }
-        utils_1.debug("created " + server.homeDir);
-        return server;
-    }
-    async spawn(command) {
-        return utils_1.asyncSpawn("--home", this.homeDir, command);
-    }
-    start() {
-        return new Promise((resolve, reject) => {
-            try {
-                const args = [
-                    "--home",
-                    this.homeDir,
-                    "run",
-                    "--rpc-addr",
-                    this.internalRpcAddr,
-                ];
-                utils_1.debug(`sending args, ${args.join(" ")}`);
-                this.subprocess = utils_1.spawn(utils_1.sandboxBinary(), args);
-                this.subprocess.stderr.on("data", (data) => {
-                    utils_1.debug(`${data}`);
-                    if (readyRegex.test(`${data}`)) {
-                        resolve(this);
-                    }
-                });
-                this.subprocess.on("exit", () => {
-                    utils_1.debug(`Server with port ${this.port}: Died`);
-                });
-            }
-            catch (e) {
-                reject(e);
-            }
-        });
-    }
-    close() {
-        if (!this.subprocess.kill("SIGINT")) {
-            console.error(`Failed to kill child process with PID: ${this.subprocess.pid}`);
-        }
-        if (this.config.rm) {
-            utils_1.rm(this.homeDir);
-        }
-    }
-}
-SandboxServer.lastPort = 4000;
+const utils_1 = require("./utils");
+const server_1 = require("./server");
 class SandboxRuntime {
     constructor(near, root, masterKey, homeDir) {
         this.homeDir = homeDir;
@@ -157,7 +47,6 @@ class SandboxRuntime {
         if (init) {
             await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
         }
-        console.log('keyStore', keyStore);
         const near = await nearAPI.connect({
             keyStore,
             networkId: this.networkId,
@@ -195,20 +84,40 @@ class Account {
     constructor(account) {
         this.najAccount = account;
     }
+    get connection() {
+        return this.najAccount.connection;
+    }
+    get accountId() {
+        return this.najAccount.accountId;
+    }
     async call(contractId, methodName, args = {}, gas, attachedDeposit) {
-        return (await this.najAccount.functionCall({
+        const oldLog = console.log;
+        global.console.log = () => { };
+        const ret = await this.najAccount.functionCall({
             contractId,
             methodName,
             args,
             gas,
             attachedDeposit,
-        })).transaction_outcome.outcome;
+        });
+        global.console.log = oldLog;
+        return ret;
     }
 }
 exports.Account = Account;
 class ContractAccount extends Account {
     async view(method, args) {
-        return ((await this.najAccount.viewFunction(this.najAccount.accountId, method, args)).transaction_outcome.outcome);
+        const res = await this.connection.provider.query({
+            request_type: 'call_function',
+            account_id: this.accountId,
+            method_name: method,
+            args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
+            finality: 'optimistic'
+        });
+        if (res.result) {
+            res.result = JSON.parse(Buffer.from(res.result).toString());
+        }
+        return res;
     }
 }
 exports.ContractAccount = ContractAccount;
@@ -216,7 +125,7 @@ async function runFunction2(configOrFunction, fn) {
     // return runFunction(f)
 }
 async function runFunction(f, config) {
-    let server = await SandboxServer.init(config);
+    let server = await server_1.SandboxServer.init(config);
     await server.start(); // Wait until server is ready
     const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir, config === null || config === void 0 ? void 0 : config.init);
     try {
