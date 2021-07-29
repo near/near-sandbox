@@ -16,7 +16,7 @@ import {
 
 import * as nearAPI from "near-api-js";
 
-const readyRegex = /Server listening at ed25519/;
+const readyRegex = /Server listening at ed25519| stats: /;
 
 interface Config {
   homeDir: string;

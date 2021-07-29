@@ -29,7 +29,7 @@ const fs_1 = require("fs");
 const bn_js_1 = __importDefault(require("bn.js"));
 const utils_1 = require("./utils");
 const nearAPI = __importStar(require("near-api-js"));
-const readyRegex = /Server listening at ed25519/;
+const readyRegex = /Server listening at ed25519| stats: /;
 function getHomeDir(p = 3000) {
     return path_1.join(temp_dir_1.default, "sandbox", p.toString());
 }
