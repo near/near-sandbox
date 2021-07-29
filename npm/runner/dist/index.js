@@ -35,7 +35,7 @@ function getHomeDir(p = 3000) {
 }
 // TODO: detemine safe port range
 function assertPortRange(p) {
-    if (p < 3000 || p > 4000) {
+    if (p < 4000 || p > 5000) {
         throw new Error("port is out of range, 3000-3999");
     }
 }
@@ -115,6 +115,7 @@ class SandboxServer {
                 utils_1.debug(`sending args, ${args.join(" ")}`);
                 this.subprocess = utils_1.spawn(utils_1.sandboxBinary(), args);
                 this.subprocess.stderr.on("data", (data) => {
+                    utils_1.debug(`${data}`);
                     if (readyRegex.test(`${data}`)) {
                         resolve(this);
                     }
@@ -137,7 +138,7 @@ class SandboxServer {
         }
     }
 }
-SandboxServer.lastPort = 3000;
+SandboxServer.lastPort = 4000;
 class SandboxRuntime {
     constructor(near, root, masterKey, homeDir) {
         this.homeDir = homeDir;
@@ -156,6 +157,7 @@ class SandboxRuntime {
         if (init) {
             await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
         }
+        console.log('keyStore', keyStore);
         const near = await nearAPI.connect({
             keyStore,
             networkId: this.networkId,
@@ -231,7 +233,7 @@ async function runFunction(f, config) {
     return runtime;
 }
 async function createSandbox(setupFn) {
-    const runtime = await runFunction(setupFn);
+    const runtime = await runFunction(setupFn, { init: true });
     return async (testFn) => {
         await runFunction(testFn, { refDir: runtime.homeDir, init: false });
     };

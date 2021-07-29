@@ -32,13 +32,13 @@ function getHomeDir(p: number = 3000): string {
 
 // TODO: detemine safe port range
 function assertPortRange(p: number): void {
-  if (p < 3000 || p > 4000) {
+  if (p < 4000 || p > 5000) {
     throw new Error("port is out of range, 3000-3999");
   }
 }
 class SandboxServer {
   private subprocess!: any;
-  private static lastPort = 3000;
+  private static lastPort = 4000;
   private _config: Config;
 
   private static nextPort(): number {
@@ -125,6 +125,7 @@ class SandboxServer {
         debug(`sending args, ${args.join(" ")}`);
         this.subprocess = spawn(sandboxBinary(), args);
         this.subprocess.stderr.on("data", (data: any) => {
+          debug(`${data}`);
           if (readyRegex.test(`${data}`)) {
             resolve(this);
           }
@@ -175,7 +176,7 @@ export class SandboxRuntime {
 
   static async connect(
     rpcAddr: string,
-    homeDir: string, 
+    homeDir: string,
     init?: boolean,
   ): Promise<SandboxRuntime> {
     const keyFile = require(join(homeDir, "validator_key.json"));
@@ -184,9 +185,10 @@ export class SandboxRuntime {
     );
     const pubKey = masterKey.getPublicKey();
     const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(homeDir);
-    if (init){
+    if (init) {
       await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
     }
+    console.log('keyStore', keyStore);
     const near = await nearAPI.connect({
       keyStore,
       networkId: this.networkId,
@@ -301,7 +303,11 @@ async function runFunction(
 ): Promise<SandboxRuntime> {
   let server = await SandboxServer.init(config);
   await server.start(); // Wait until server is ready
-  const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir, config?.init);
+  const runtime = await SandboxRuntime.connect(
+    server.rpcAddr,
+    server.homeDir,
+    config?.init
+  );
   try {
     await f(runtime);
   } finally {
@@ -320,7 +326,7 @@ export type SandboxRunner = (f: TestRunnerFn) => Promise<void>;
 export async function createSandbox(
   setupFn: TestRunnerFn
 ): Promise<SandboxRunner> {
-  const runtime = await runFunction(setupFn);
+  const runtime = await runFunction(setupFn, { init: true });
   return async (testFn: TestRunnerFn) => {
     await runFunction(testFn, { refDir: runtime.homeDir, init: false });
   };
