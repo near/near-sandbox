@@ -102,7 +102,7 @@ class Account {
 }
 exports.Account = Account;
 class ContractAccount extends Account {
-    async view(method, args) {
+    async view(method, args = {}) {
         const res = await this.connection.provider.query({
             request_type: 'call_function',
             account_id: this.accountId,

@@ -138,7 +138,7 @@ export class Account {
 }
 
 export class ContractAccount extends Account {
-  async view<T>(method: string, args?: Args): Promise<any> {
+  async view<T>(method: string, args: Args = {}): Promise<any> {
     const res:any = await this.connection.provider.query({
       request_type: 'call_function',
       account_id: this.accountId,
