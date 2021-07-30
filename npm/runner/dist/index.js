@@ -42,7 +42,6 @@ class SandboxRuntime {
     static async connect(rpcAddr, homeDir, init) {
         const keyFile = require(path_1.join(homeDir, "validator_key.json"));
         const masterKey = nearAPI.utils.KeyPair.fromString(keyFile.secret_key || keyFile.private_key);
-        const pubKey = masterKey.getPublicKey();
         const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(homeDir);
         if (init) {
             await keyStore.setKey(this.networkId, this.rootAccountName, masterKey);
@@ -125,21 +124,21 @@ async function runFunction2(configOrFunction, fn) {
     // return runFunction(f)
 }
 async function runFunction(f, config) {
-    let server = await server_1.SandboxServer.init(config);
-    await server.start(); // Wait until server is ready
-    const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir, config === null || config === void 0 ? void 0 : config.init);
+    const server = await server_1.SandboxServer.init(config);
     try {
+        await server.start(); // Wait until server is ready
+        const runtime = await SandboxRuntime.connect(server.rpcAddr, server.homeDir, config === null || config === void 0 ? void 0 : config.init);
         await f(runtime);
+        return runtime;
+    }
+    catch (e) {
+        console.error(e);
+        process.exit(1);
     }
     finally {
-        // catch (e){
-        //   console.error(e)
-        //   throw e;
-        // }
         utils_1.debug("Closing server with port " + server.port);
         server.close();
     }
-    return runtime;
 }
 async function createSandbox(setupFn) {
     const runtime = await runFunction(setupFn, { init: true });

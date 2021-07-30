@@ -40,7 +40,6 @@ export class SandboxRuntime {
     const masterKey = nearAPI.utils.KeyPair.fromString(
       keyFile.secret_key || keyFile.private_key
     );
-    const pubKey = masterKey.getPublicKey();
     const keyStore = new nearAPI.keyStores.UnencryptedFileSystemKeyStore(
       homeDir
     );
@@ -170,24 +169,23 @@ async function runFunction(
   f: TestRunnerFn,
   config?: Partial<Config>
 ): Promise<SandboxRuntime> {
-  let server = await SandboxServer.init(config);
-  await server.start(); // Wait until server is ready
-  const runtime = await SandboxRuntime.connect(
-    server.rpcAddr,
-    server.homeDir,
-    config?.init
-  );
+  const server = await SandboxServer.init(config);
   try {
+    await server.start(); // Wait until server is ready
+    const runtime = await SandboxRuntime.connect(
+      server.rpcAddr,
+      server.homeDir,
+      config?.init
+    );
     await f(runtime);
+    return runtime;
+  } catch (e){
+    console.error(e)
+    process.exit(1);
   } finally {
-    // catch (e){
-    //   console.error(e)
-    //   throw e;
-    // }
     debug("Closing server with port " + server.port);
     server.close();
   }
-  return runtime;
 }
 
 export type SandboxRunner = (f: TestRunnerFn) => Promise<void>;

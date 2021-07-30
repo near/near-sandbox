@@ -1,8 +1,11 @@
 import { join } from "path";
+import * as http from "http";
 
 import tmpDir from "temp-dir";
 
-import { 
+import { openSync }from "fs";
+
+import {
   debug,
   asyncSpawn,
   ChildProcessPromise,
@@ -12,8 +15,6 @@ import {
   copyDir,
   sandboxBinary,
 } from "./utils";
-
-
 
 const readyRegex = /Server listening at ed25519| stats: /;
 
@@ -35,10 +36,61 @@ function assertPortRange(p: number): void {
     throw new Error("port is out of range, 3000-3999");
   }
 }
+
+const pollData = JSON.stringify({
+  jsonrpc: "2.0",
+  id: "dontcare",
+  method: "block",
+  params: { finality: "final" },
+});
+
+function pingServer(port: number): Promise<boolean> {
+  const options = {
+    hostname: `http://localhost:${port}`,
+    // port,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(pollData),
+    },
+  };
+  return new Promise((resolve, _) => {
+    const req  = http.request(options, (res) => {
+      if (res.statusCode == 200) {
+        resolve(true);
+      } else {
+        debug(`Sandbox running but got non-200 response: ${JSON.stringify(res)}`)
+        resolve(false);
+      }
+    });
+    req.on('error', (e) => {
+      debug(e.toString());
+      resolve(false);
+    });
+    
+    // Write data to request body
+    req.write(pollData);
+    req.end();
+  })
+}
+
+async function sandboxStarted(port: number, timeout: number = 10_000): Promise<void> {
+  const checkUntil = Date.now() + timeout;
+  console.log(Date.now(), checkUntil);
+  do {
+    console.log('pinging server');
+    if (await pingServer(port)) return;
+    else await new Promise(res => setTimeout(() => res(true), 250))
+  } while (Date.now() < checkUntil)
+  throw new Error(`Sandbox Server with port: ${port} failed to start after ${timeout}ms`);
+}
+
 export class SandboxServer {
   private subprocess!: any;
   private static lastPort = 4000;
   private _config: Config;
+  private readyToDie: boolean = false;
+  private ready: boolean = false;
 
   private static nextPort(): number {
     return SandboxServer.lastPort++;
@@ -112,36 +164,41 @@ export class SandboxServer {
     return asyncSpawn("--home", this.homeDir, command);
   }
 
-  start(): Promise<SandboxServer> {
-    return new Promise((resolve, reject) => {
-      try {
-        const args = [
-          "--home",
-          this.homeDir,
-          "run",
-          "--rpc-addr",
-          this.internalRpcAddr,
-        ];
-        debug(`sending args, ${args.join(" ")}`);
-        this.subprocess = spawn(sandboxBinary(), args);
-        const onData = (data: any) => {
-          debug(`${data}`);
-          if (readyRegex.test(`${data}`)) {
-            setTimeout(() => resolve(this), 2000);
-            this.subprocess.stderr.removeListener("data", onData)
-          }
-        }
-        this.subprocess.stderr.on("data", onData);
-        this.subprocess.on("exit", () => {
-          debug(`Server with port ${this.port}: Died`);
-        });
-      } catch (e: any) {
-        reject(e);
-      }
+  async start(): Promise<SandboxServer> {
+    const args = [
+      "--home",
+      this.homeDir,
+      "run",
+      "--rpc-addr",
+      this.internalRpcAddr,
+      "--produce-empty-blocks",
+      "false",
+    ];
+    debug(`sending args, ${args.join(" ")}`);
+    const options: any = {
+      stdio: ['ignore', 'ignore', 'ignore']
+    };
+    if (process.env["SANDBOX_DEBUG"]) {
+      const filePath = join(this.homeDir,'sandboxServer.log');
+      debug(`near-sandbox logs writing to file: ${filePath}`)
+      options.stdio[2] = openSync(filePath, 'a');
+      
+      options.env = { RUST_BACKTRACE: 'full'};
+    }
+    this.subprocess = spawn(sandboxBinary(), args, options);
+    this.subprocess.on("exit", () => {
+      debug(
+        `Server with port ${this.port}: Died ${
+          this.readyToDie ? "gracefully" : "horribly"
+        }`
+      );
     });
+    await sandboxStarted(this.port);
+    return this; 
   }
 
   close(): void {
+    this.readyToDie = true;
     if (!this.subprocess.kill("SIGINT")) {
       console.error(
         `Failed to kill child process with PID: ${this.subprocess.pid}`

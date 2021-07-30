@@ -10,6 +10,8 @@ export declare class SandboxServer {
     private subprocess;
     private static lastPort;
     private _config;
+    private readyToDie;
+    private ready;
     private static nextPort;
     private static defaultConfig;
     private constructor();
