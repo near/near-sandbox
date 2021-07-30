@@ -47,8 +47,8 @@ const pollData = JSON.stringify({
 });
 function pingServer(port) {
     const options = {
-        hostname: `http://localhost:${port}`,
-        // port,
+        hostname: `0.0.0.0`,
+        port,
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -71,18 +71,16 @@ function pingServer(port) {
         });
         // Write data to request body
         req.write(pollData);
+        utils_1.debug(`polling server at port ${options.port}`);
         req.end();
     });
 }
-async function sandboxStarted(port, timeout = 10000) {
-    const checkUntil = Date.now() + timeout;
-    console.log(Date.now(), checkUntil);
+async function sandboxStarted(port, timeout = 20000) {
+    const checkUntil = Date.now() + timeout + 250;
     do {
-        console.log('pinging server');
         if (await pingServer(port))
             return;
-        else
-            await new Promise(res => setTimeout(() => res(true), 250));
+        await new Promise(res => setTimeout(() => res(true), 250));
     } while (Date.now() < checkUntil);
     throw new Error(`Sandbox Server with port: ${port} failed to start after ${timeout}ms`);
 }
@@ -159,8 +157,6 @@ class SandboxServer {
             "run",
             "--rpc-addr",
             this.internalRpcAddr,
-            "--produce-empty-blocks",
-            "false",
         ];
         utils_1.debug(`sending args, ${args.join(" ")}`);
         const options = {
@@ -177,6 +173,7 @@ class SandboxServer {
             utils_1.debug(`Server with port ${this.port}: Died ${this.readyToDie ? "gracefully" : "horribly"}`);
         });
         await sandboxStarted(this.port);
+        utils_1.debug(`Connected to server at ${this.internalRpcAddr}`);
         return this;
     }
     close() {

@@ -90,8 +90,6 @@ class Account {
         return this.najAccount.accountId;
     }
     async call(contractId, methodName, args = {}, gas, attachedDeposit) {
-        const oldLog = console.log;
-        global.console.log = () => { };
         const ret = await this.najAccount.functionCall({
             contractId,
             methodName,
@@ -99,7 +97,6 @@ class Account {
             gas,
             attachedDeposit,
         });
-        global.console.log = oldLog;
         return ret;
     }
 }
@@ -133,7 +130,7 @@ async function runFunction(f, config) {
     }
     catch (e) {
         console.error(e);
-        process.exit(1);
+        throw e;
     }
     finally {
         utils_1.debug("Closing server with port " + server.port);

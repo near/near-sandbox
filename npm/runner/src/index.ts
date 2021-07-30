@@ -125,16 +125,13 @@ export class Account {
     gas?: BN,
     attachedDeposit?: BN
   ): Promise<any> {
-    const oldLog = console.log;
-    global.console.log = () => {};
     const ret = await this.najAccount.functionCall({
-        contractId,
-        methodName,
-        args,
-        gas,
-        attachedDeposit,
-      });
-    global.console.log = oldLog;
+      contractId,
+      methodName,
+      args,
+      gas,
+      attachedDeposit,
+    });
     return ret;
   }
 
@@ -181,7 +178,7 @@ async function runFunction(
     return runtime;
   } catch (e){
     console.error(e)
-    process.exit(1);
+    throw e
   } finally {
     debug("Closing server with port " + server.port);
     server.close();
@@ -195,6 +192,6 @@ export async function createSandbox(
 ): Promise<SandboxRunner> {
   const runtime = await runFunction(setupFn, { init: true });
   return async (testFn: TestRunnerFn) => {
-    await runFunction(testFn, { refDir: runtime.homeDir, init: false });
+    await runFunction(testFn, { refDir: runtime!.homeDir, init: false });
   };
 }

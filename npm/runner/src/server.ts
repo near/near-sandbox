@@ -46,8 +46,8 @@ const pollData = JSON.stringify({
 
 function pingServer(port: number): Promise<boolean> {
   const options = {
-    hostname: `http://localhost:${port}`,
-    // port,
+    hostname: `0.0.0.0`,
+    port,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -70,17 +70,16 @@ function pingServer(port: number): Promise<boolean> {
     
     // Write data to request body
     req.write(pollData);
+    debug(`polling server at port ${options.port}`);
     req.end();
   })
 }
 
-async function sandboxStarted(port: number, timeout: number = 10_000): Promise<void> {
-  const checkUntil = Date.now() + timeout;
-  console.log(Date.now(), checkUntil);
+async function sandboxStarted(port: number, timeout: number = 20_000): Promise<void> {
+  const checkUntil = Date.now() + timeout + 250;
   do {
-    console.log('pinging server');
     if (await pingServer(port)) return;
-    else await new Promise(res => setTimeout(() => res(true), 250))
+    await new Promise(res => setTimeout(() => res(true), 250));
   } while (Date.now() < checkUntil)
   throw new Error(`Sandbox Server with port: ${port} failed to start after ${timeout}ms`);
 }
@@ -171,8 +170,6 @@ export class SandboxServer {
       "run",
       "--rpc-addr",
       this.internalRpcAddr,
-      "--produce-empty-blocks",
-      "false",
     ];
     debug(`sending args, ${args.join(" ")}`);
     const options: any = {
@@ -182,7 +179,6 @@ export class SandboxServer {
       const filePath = join(this.homeDir,'sandboxServer.log');
       debug(`near-sandbox logs writing to file: ${filePath}`)
       options.stdio[2] = openSync(filePath, 'a');
-      
       options.env = { RUST_BACKTRACE: 'full'};
     }
     this.subprocess = spawn(sandboxBinary(), args, options);
@@ -194,6 +190,7 @@ export class SandboxServer {
       );
     });
     await sandboxStarted(this.port);
+    debug(`Connected to server at ${this.internalRpcAddr}`);
     return this; 
   }
 
