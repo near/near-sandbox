@@ -27,6 +27,7 @@ const path_1 = require("path");
 const fs_1 = require("fs");
 const bn_js_1 = __importDefault(require("bn.js"));
 const nearAPI = __importStar(require("near-api-js"));
+// import { CodeResult } from "near-api-js/src/providers/provider"
 const utils_1 = require("./utils");
 const server_1 = require("./server");
 class SandboxRuntime {
@@ -102,7 +103,9 @@ class Account {
 }
 exports.Account = Account;
 class ContractAccount extends Account {
-    async view(method, args = {}) {
+    // async view_raw(method: string, args: Args = {}): Promise<CodeResult> {
+    //   const res: CodeResult = await this.connection.provider.query({
+    async view_raw(method, args = {}) {
         const res = await this.connection.provider.query({
             request_type: 'call_function',
             account_id: this.accountId,
@@ -110,10 +113,14 @@ class ContractAccount extends Account {
             args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
             finality: 'optimistic'
         });
-        if (res.result) {
-            res.result = JSON.parse(Buffer.from(res.result).toString());
-        }
         return res;
+    }
+    async view(method, args = {}) {
+        const res = await this.view_raw(method, args);
+        if (res.result) {
+            return JSON.parse(Buffer.from(res.result).toString());
+        }
+        return res.result;
     }
 }
 exports.ContractAccount = ContractAccount;

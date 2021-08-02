@@ -25,10 +25,11 @@ export declare class Account {
     constructor(account: nearAPI.Account);
     get connection(): nearAPI.Connection;
     get accountId(): string;
-    call<T>(contractId: string, methodName: string, args?: Args, gas?: BN, attachedDeposit?: BN): Promise<any>;
+    call(contractId: string, methodName: string, args?: Args, gas?: BN, attachedDeposit?: BN): Promise<nearAPI.providers.FinalExecutionOutcome>;
 }
 export declare class ContractAccount extends Account {
-    view<T>(method: string, args?: Args): Promise<any>;
+    view_raw(method: string, args?: Args): Promise<any>;
+    view(method: string, args?: Args): Promise<string | null>;
 }
 export declare type TestRunnerFn = (s: SandboxRuntime) => Promise<void>;
 export declare type SandboxRunner = (f: TestRunnerFn) => Promise<void>;
