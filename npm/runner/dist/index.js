@@ -90,15 +90,28 @@ class Account {
     get accountId() {
         return this.najAccount.accountId;
     }
-    async call(contractId, methodName, args = {}, gas, attachedDeposit) {
-        const ret = await this.najAccount.functionCall({
-            contractId,
-            methodName,
-            args,
-            gas,
-            attachedDeposit,
-        });
+    async call_raw(args) {
+        const ret = await this.najAccount.functionCall(args);
         return ret;
+    }
+    /**
+     * Convenient wrapper around lower-level {{call_raw}}.
+     *
+     * @param args arguments required for call
+     * @returns any parsed return value, or throws with an error if call failed
+     */
+    async call(args) {
+        const txResult = await this.call_raw(args);
+        if (typeof txResult.status === 'object' && typeof txResult.status.SuccessValue === 'string') {
+            const value = Buffer.from(txResult.status.SuccessValue, 'base64').toString();
+            try {
+                return JSON.parse(value);
+            }
+            catch (e) {
+                return value;
+            }
+        }
+        throw JSON.stringify(txResult.status);
     }
 }
 exports.Account = Account;

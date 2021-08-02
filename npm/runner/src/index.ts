@@ -9,6 +9,32 @@ import * as nearAPI from "near-api-js";
 import { debug } from "./utils";
 import { Config, SandboxServer } from "./server";
 
+// TODO: import from NAJ
+interface FunctionCallOptions {
+    /** The NEAR account id where the contract is deployed */
+    contractId: string;
+    /** The name of the method to invoke */
+    methodName: string;
+    /**
+     * named arguments to pass the method `{ messageText: 'my message' }`
+     */
+    args: object;
+    /** max amount of gas that method call can use */
+    gas?: BN;
+    /** amount of NEAR (in yoctoNEAR) to send together with the call */
+    attachedDeposit?: BN;
+    /**
+     * Metadata to send the NEAR Wallet if using it to sign transactions.
+     * @see {@link RequestSignTransactionsOptions}
+     */
+    walletMeta?: string;
+    /**
+     * Callback url to send the NEAR Wallet if using it to sign transactions.
+     * @see {@link RequestSignTransactionsOptions}
+     */
+    walletCallbackUrl?: string;
+}
+
 export class SandboxRuntime {
   private static networkId = "sandbox";
   private static rootAccountName = "test.near";
@@ -119,21 +145,28 @@ export class Account {
     return this.najAccount.accountId;
   }
 
-  async call(
-    contractId: string,
-    methodName: string,
-    args: Args = {},
-    gas?: BN,
-    attachedDeposit?: BN
-  ): Promise<nearAPI.providers.FinalExecutionOutcome> {
-    const ret = await this.najAccount.functionCall({
-      contractId,
-      methodName,
-      args,
-      gas,
-      attachedDeposit,
-    });
+  async call_raw(args: FunctionCallOptions): Promise<nearAPI.providers.FinalExecutionOutcome> {
+    const ret = await this.najAccount.functionCall(args);
     return ret;
+  }
+
+  /**
+   * Convenient wrapper around lower-level {{call_raw}}.
+   *
+   * @param args arguments required for call
+   * @returns any parsed return value, or throws with an error if call failed
+   */
+  async call(args: FunctionCallOptions): Promise<any> {
+    const txResult = await this.call_raw(args);
+    if (typeof txResult.status === 'object' && typeof txResult.status.SuccessValue === 'string') {
+      const value = Buffer.from(txResult.status.SuccessValue, 'base64').toString();
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return value;
+      }
+    }
+    throw JSON.stringify(txResult.status);
   }
 }
 
