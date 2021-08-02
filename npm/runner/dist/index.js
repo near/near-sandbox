@@ -90,12 +90,62 @@ class Account {
     get accountId() {
         return this.najAccount.accountId;
     }
+    /**
+     *
+     * @param args {
+      The NEAR account id where the contract is deployed
+      contractId: string;
+      
+      The name of the method to invoke
+      methodName: string;
+      named arguments to pass the method `{ messageText: 'my message' }`
+      args: object;
+       max amount of gas that method call can use  default
+      gas?: BN;
+       amount of NEAR (in yoctoNEAR) to send together with the call
+      attachedDeposit?: BN;
+      
+       Metadata to send the NEAR Wallet if using it to sign transactions.
+       @see {@link RequestSignTransactionsOptions}
+       
+      walletMeta?: string;
+      
+       * Callback url to send the NEAR Wallet if using it to sign transactions.
+       * @see {@link RequestSignTransactionsOptions}
+  
+      walletCallbackUrl?: string;
+     }
+     * @returns
+     */
     async call_raw(args) {
         const ret = await this.najAccount.functionCall(args);
         return ret;
     }
     /**
      * Convenient wrapper around lower-level {{call_raw}}.
+     *  @param args arguments required for call {
+      The NEAR account id where the contract is deployed
+      contractId: string;
+      
+      The name of the method to invoke
+      methodName: string;
+      named arguments to pass the method `{ messageText: 'my message' }`
+      args: object;
+       max amount of gas that method call can use  default
+      gas?: BN;
+       amount of NEAR (in yoctoNEAR) to send together with the call
+      attachedDeposit?: BN;
+      
+       Metadata to send the NEAR Wallet if using it to sign transactions.
+       @see {@link RequestSignTransactionsOptions}
+       
+      walletMeta?: string;
+      
+       * Callback url to send the NEAR Wallet if using it to sign transactions.
+       * @see {@link RequestSignTransactionsOptions}
+  
+      walletCallbackUrl?: string;
+     }
      *
      * @param args arguments required for call
      * @returns any parsed return value, or throws with an error if call failed

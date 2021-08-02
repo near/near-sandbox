@@ -49,9 +49,59 @@ export declare class Account {
     constructor(account: nearAPI.Account);
     get connection(): nearAPI.Connection;
     get accountId(): string;
+    /**
+     *
+     * @param args {
+      The NEAR account id where the contract is deployed
+      contractId: string;
+      
+      The name of the method to invoke
+      methodName: string;
+      named arguments to pass the method `{ messageText: 'my message' }`
+      args: object;
+       max amount of gas that method call can use  default
+      gas?: BN;
+       amount of NEAR (in yoctoNEAR) to send together with the call
+      attachedDeposit?: BN;
+      
+       Metadata to send the NEAR Wallet if using it to sign transactions.
+       @see {@link RequestSignTransactionsOptions}
+       
+      walletMeta?: string;
+      
+       * Callback url to send the NEAR Wallet if using it to sign transactions.
+       * @see {@link RequestSignTransactionsOptions}
+  
+      walletCallbackUrl?: string;
+     }
+     * @returns
+     */
     call_raw(args: FunctionCallOptions): Promise<nearAPI.providers.FinalExecutionOutcome>;
     /**
      * Convenient wrapper around lower-level {{call_raw}}.
+     *  @param args arguments required for call {
+      The NEAR account id where the contract is deployed
+      contractId: string;
+      
+      The name of the method to invoke
+      methodName: string;
+      named arguments to pass the method `{ messageText: 'my message' }`
+      args: object;
+       max amount of gas that method call can use  default
+      gas?: BN;
+       amount of NEAR (in yoctoNEAR) to send together with the call
+      attachedDeposit?: BN;
+      
+       Metadata to send the NEAR Wallet if using it to sign transactions.
+       @see {@link RequestSignTransactionsOptions}
+       
+      walletMeta?: string;
+      
+       * Callback url to send the NEAR Wallet if using it to sign transactions.
+       * @see {@link RequestSignTransactionsOptions}
+  
+      walletCallbackUrl?: string;
+     }
      *
      * @param args arguments required for call
      * @returns any parsed return value, or throws with an error if call failed
@@ -60,7 +110,7 @@ export declare class Account {
 }
 export declare class ContractAccount extends Account {
     view_raw(method: string, args?: Args): Promise<any>;
-    view(method: string, args?: Args): Promise<string | null>;
+    view(method: string, args?: Args): Promise<any>;
 }
 export declare type TestRunnerFn = (s: SandboxRuntime) => Promise<void>;
 export declare type SandboxRunner = (f: TestRunnerFn) => Promise<void>;
