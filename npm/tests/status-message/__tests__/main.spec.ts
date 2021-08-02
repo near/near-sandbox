@@ -1,5 +1,5 @@
-const assert = require("assert").strict;
-const { createSandbox } = require("near-sandbox-runner")
+import { strict as assert } from "assert";
+import { createSandbox, SandboxRuntime, SandboxRunner } from "near-sandbox-runner";
 
 // sandbox creates sub-accounts of 'test.near'
 const ALICE = "alice.test.near";
@@ -8,7 +8,7 @@ const CONTRACT = "status-message.test.near";
 
 // 1. Creates testing accounts and deploys a contract
 async function initSandbox() {
-  return await createSandbox(async sandbox => {
+  return await createSandbox(async (sandbox: SandboxRuntime) => {
     await sandbox.createAndDeploy(
       CONTRACT,
       `${__dirname}/../build/debug/status_message.wasm`
@@ -19,19 +19,23 @@ async function initSandbox() {
 }
 
 // 2. Performs a `set_status` transaction signed by Alice and then calls `get_status` to confirm `set_status` worked
-async function testAliceSetsStatus(sandboxRunner) {
-  await sandboxRunner(async sandbox => {
+async function testAliceSetsStatus(sandboxRunner: SandboxRunner) {
+  await sandboxRunner(async (sandbox: SandboxRuntime) => {
     const alice = sandbox.getAccount(ALICE);
     const contract = sandbox.getContractAccount(CONTRACT);
-    await alice.call(CONTRACT, "set_status", { message: "hello" })
+    await alice.call({
+      contractId: CONTRACT,
+      methodName: "set_status",
+      args: { message: "hello" }
+    })
     const result = await contract.view("get_status", { account_id: ALICE })
     assert.equal(result, "hello");
   })
 }
 
 // 3. Gets Bob's status and which should be `null` as Bob has not yet set status
-async function testDefaultStatus(sandboxRunner) {
-  await sandboxRunner(async sandbox => {
+async function testDefaultStatus(sandboxRunner: SandboxRunner) {
+  await sandboxRunner(async (sandbox: SandboxRuntime) => {
     const contract = sandbox.getContractAccount(CONTRACT);
     const result = await contract.view("get_status", { account_id: BOB })
     assert.equal(result, null)
@@ -39,11 +43,15 @@ async function testDefaultStatus(sandboxRunner) {
 }
 
 // 4. Performs a `set_status` transaction signed by Bob and then calls `get_status` to show Bob's changed status and should not affect Alice's status
-async function testStatusPerAccount(sandboxRunner) {
-  await sandboxRunner(async sandbox => {
+async function testStatusPerAccount(sandboxRunner: SandboxRunner) {
+  await sandboxRunner(async (sandbox: SandboxRuntime) => {
     const bob = sandbox.getAccount(BOB);
     const contract = sandbox.getContractAccount(CONTRACT);
-    await bob.call(CONTRACT, "set_status", { message: "world" })
+    await bob.call({
+      contractId: CONTRACT,
+      methodName: "set_status",
+      args: { message: "world" }
+    })
     const bobStatus = await contract.view(
       "get_status",
       { account_id: BOB }
