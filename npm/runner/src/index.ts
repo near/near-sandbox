@@ -9,32 +9,6 @@ import * as nearAPI from "near-api-js";
 import { debug } from "./utils";
 import { Config, SandboxServer } from "./server";
 
-// TODO: import from NAJ
-interface FunctionCallOptions {
-    /** The NEAR account id where the contract is deployed */
-    contractId: string;
-    /** The name of the method to invoke */
-    methodName: string;
-    /**
-     * named arguments to pass the method `{ messageText: 'my message' }`
-     */
-    args: object;
-    /** max amount of gas that method call can use */
-    gas?: BN;
-    /** amount of NEAR (in yoctoNEAR) to send together with the call */
-    attachedDeposit?: BN;
-    /**
-     * Metadata to send the NEAR Wallet if using it to sign transactions.
-     * @see {@link RequestSignTransactionsOptions}
-     */
-    walletMeta?: string;
-    /**
-     * Callback url to send the NEAR Wallet if using it to sign transactions.
-     * @see {@link RequestSignTransactionsOptions}
-     */
-    walletCallbackUrl?: string;
-}
-
 export class SandboxRuntime {
   private static networkId = "sandbox";
   private static rootAccountName = "test.near";
@@ -146,68 +120,50 @@ export class Account {
   }
 
   /**
-   * 
-   * @param args {
-    The NEAR account id where the contract is deployed
-    contractId: string;
-    
-    The name of the method to invoke 
-    methodName: string;
-    named arguments to pass the method `{ messageText: 'my message' }`
-    args: object;
-     max amount of gas that method call can use  default
-    gas?: BN;
-     amount of NEAR (in yoctoNEAR) to send together with the call
-    attachedDeposit?: BN;
-    
-     Metadata to send the NEAR Wallet if using it to sign transactions.
-     @see {@link RequestSignTransactionsOptions}
-     
-    walletMeta?: string;
-    
-     * Callback url to send the NEAR Wallet if using it to sign transactions.
-     * @see {@link RequestSignTransactionsOptions}
-
-    walletCallbackUrl?: string;
-   }
-   * @returns 
+   * Call a NEAR contract and return full results with raw receipts, etc. Example:
+   *
+   *     await call('lol.testnet', 'set_status', { message: 'hello' }, new BN(30 * 10**12), '0')
+   *
+   * @returns nearAPI.providers.FinalExecutionOutcome
    */
-  async call_raw(args: FunctionCallOptions): Promise<nearAPI.providers.FinalExecutionOutcome> {
-    const ret = await this.najAccount.functionCall(args);
-    return ret;
+  async call_raw(
+    contractId: string,
+    methodName: string,
+    args: object,
+    gas: string | BN = new BN(25 * 10**12),
+    attachedDeposit: string | BN = new BN('0'),
+  ): Promise<any> {
+    const txResult = await this.najAccount.functionCall({
+      contractId,
+      methodName,
+      args,
+      gas: new BN(gas),
+      attachedDeposit: new BN(attachedDeposit),
+    });
+    return txResult;
   }
 
   /**
-   * Convenient wrapper around lower-level {{call_raw}}.
-   *  @param args arguments required for call {
-    The NEAR account id where the contract is deployed
-    contractId: string;
-    
-    The name of the method to invoke 
-    methodName: string;
-    named arguments to pass the method `{ messageText: 'my message' }`
-    args: object;
-     max amount of gas that method call can use  default
-    gas?: BN;
-     amount of NEAR (in yoctoNEAR) to send together with the call
-    attachedDeposit?: BN;
-    
-     Metadata to send the NEAR Wallet if using it to sign transactions.
-     @see {@link RequestSignTransactionsOptions}
-     
-    walletMeta?: string;
-    
-     * Callback url to send the NEAR Wallet if using it to sign transactions.
-     * @see {@link RequestSignTransactionsOptions}
-
-    walletCallbackUrl?: string;
-   }
+   * Convenient wrapper around lower-level `call_raw` that returns only successful result of call, or throws error encountered during call.  Example:
    *
-   * @param args arguments required for call
+   *     await call('lol.testnet', 'set_status', { message: 'hello' }, new BN(30 * 10**12), '0')
+   *
    * @returns any parsed return value, or throws with an error if call failed
    */
-  async call(args: FunctionCallOptions): Promise<any> {
-    const txResult = await this.call_raw(args);
+  async call(
+    contractId: string,
+    methodName: string,
+    args: object,
+    gas: string | BN = new BN(30 * 10**12), // TODO: import DEFAULT_FUNCTION_CALL_GAS from NAJ
+    attachedDeposit: string | BN = new BN('0'),
+  ): Promise<any> {
+    const txResult = await this.call_raw(
+      contractId,
+      methodName,
+      args,
+      gas,
+      attachedDeposit,
+    );
     if (typeof txResult.status === 'object' && typeof txResult.status.SuccessValue === 'string') {
       const value = Buffer.from(txResult.status.SuccessValue, 'base64').toString();
       try {

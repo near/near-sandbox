@@ -23,11 +23,7 @@ async function testAliceSetsStatus(sandboxRunner: SandboxRunner) {
   await sandboxRunner(async (sandbox: SandboxRuntime) => {
     const alice = sandbox.getAccount(ALICE);
     const contract = sandbox.getContractAccount(CONTRACT);
-    await alice.call({
-      contractId: CONTRACT,
-      methodName: "set_status",
-      args: { message: "hello" }
-    })
+    await alice.call(CONTRACT, "set_status", { message: "hello" })
     const result = await contract.view("get_status", { account_id: ALICE })
     assert.equal(result, "hello");
   })
@@ -47,11 +43,7 @@ async function testStatusPerAccount(sandboxRunner: SandboxRunner) {
   await sandboxRunner(async (sandbox: SandboxRuntime) => {
     const bob = sandbox.getAccount(BOB);
     const contract = sandbox.getContractAccount(CONTRACT);
-    await bob.call({
-      contractId: CONTRACT,
-      methodName: "set_status",
-      args: { message: "world" }
-    })
+    await bob.call(CONTRACT, "set_status", { message: "world" })
     const bobStatus = await contract.view(
       "get_status",
       { account_id: BOB }
@@ -75,5 +67,4 @@ it('works', async () => {
     testDefaultStatus(sandboxRunner),
     testStatusPerAccount(sandboxRunner),
   ])
-  console.log('\x1b[32mPASSED\x1b[0m')
 })

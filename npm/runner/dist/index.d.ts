@@ -1,29 +1,5 @@
 import BN from "bn.js";
 import * as nearAPI from "near-api-js";
-interface FunctionCallOptions {
-    /** The NEAR account id where the contract is deployed */
-    contractId: string;
-    /** The name of the method to invoke */
-    methodName: string;
-    /**
-     * named arguments to pass the method `{ messageText: 'my message' }`
-     */
-    args: object;
-    /** max amount of gas that method call can use */
-    gas?: BN;
-    /** amount of NEAR (in yoctoNEAR) to send together with the call */
-    attachedDeposit?: BN;
-    /**
-     * Metadata to send the NEAR Wallet if using it to sign transactions.
-     * @see {@link RequestSignTransactionsOptions}
-     */
-    walletMeta?: string;
-    /**
-     * Callback url to send the NEAR Wallet if using it to sign transactions.
-     * @see {@link RequestSignTransactionsOptions}
-     */
-    walletCallbackUrl?: string;
-}
 export declare class SandboxRuntime {
     homeDir: string;
     private static networkId;
@@ -50,63 +26,22 @@ export declare class Account {
     get connection(): nearAPI.Connection;
     get accountId(): string;
     /**
+     * Call a NEAR contract and return full results with raw receipts, etc. Example:
      *
-     * @param args {
-      The NEAR account id where the contract is deployed
-      contractId: string;
-      
-      The name of the method to invoke
-      methodName: string;
-      named arguments to pass the method `{ messageText: 'my message' }`
-      args: object;
-       max amount of gas that method call can use  default
-      gas?: BN;
-       amount of NEAR (in yoctoNEAR) to send together with the call
-      attachedDeposit?: BN;
-      
-       Metadata to send the NEAR Wallet if using it to sign transactions.
-       @see {@link RequestSignTransactionsOptions}
-       
-      walletMeta?: string;
-      
-       * Callback url to send the NEAR Wallet if using it to sign transactions.
-       * @see {@link RequestSignTransactionsOptions}
-  
-      walletCallbackUrl?: string;
-     }
-     * @returns
+     *     await call('lol.testnet', 'set_status', { message: 'hello' }, new BN(30 * 10**12), '0')
+     *
+     * @returns nearAPI.providers.FinalExecutionOutcome
      */
-    call_raw(args: FunctionCallOptions): Promise<nearAPI.providers.FinalExecutionOutcome>;
+    call_raw(contractId: string, methodName: string, args: object, gas?: string | BN, attachedDeposit?: string | BN): Promise<any>;
     /**
-     * Convenient wrapper around lower-level {{call_raw}}.
-     *  @param args arguments required for call {
-      The NEAR account id where the contract is deployed
-      contractId: string;
-      
-      The name of the method to invoke
-      methodName: string;
-      named arguments to pass the method `{ messageText: 'my message' }`
-      args: object;
-       max amount of gas that method call can use  default
-      gas?: BN;
-       amount of NEAR (in yoctoNEAR) to send together with the call
-      attachedDeposit?: BN;
-      
-       Metadata to send the NEAR Wallet if using it to sign transactions.
-       @see {@link RequestSignTransactionsOptions}
-       
-      walletMeta?: string;
-      
-       * Callback url to send the NEAR Wallet if using it to sign transactions.
-       * @see {@link RequestSignTransactionsOptions}
-  
-      walletCallbackUrl?: string;
-     }
+     * Convenient wrapper around lower-level `call_raw` that returns only successful result of call, or throws error encountered during call.  Example:
      *
-     * @param args arguments required for call
+     *     await call('lol.testnet', 'set_status', { message: 'hello' }, new BN(30 * 10**12), '0')
+     *
      * @returns any parsed return value, or throws with an error if call failed
      */
-    call(args: FunctionCallOptions): Promise<any>;
+    call(contractId: string, methodName: string, args: object, gas?: string | BN, // TODO: import DEFAULT_FUNCTION_CALL_GAS from NAJ
+    attachedDeposit?: string | BN): Promise<any>;
 }
 export declare class ContractAccount extends Account {
     view_raw(method: string, args?: Args): Promise<any>;
