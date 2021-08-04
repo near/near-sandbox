@@ -1,6 +1,0 @@
-{
-  "extends": "near-sandbox-runner/tsconfig.json",
-  "compilerOptions": {
-    "noImplicitAny": false
-  }
-}
