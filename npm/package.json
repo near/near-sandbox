@@ -3,33 +3,22 @@
   "version": "0.0.4",
   "description": "CLI tool for testing NEAR smart contracts",
   "bin": {
-    "near-sandbox": "./run.js"
+    "near-sandbox": "./run.js",
+    "sandbox": "./run.js"
   },
   "repository": "https://github.com/near/sandbox",
-  "author": "Willem Wyndham (willem@nearprotocol.com)",
+  "author": "Near Inc (team@near.org)",
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "binary-install": "^0.1.1",
-    "promisify-child-process": "^4.1.1",
-    "rimraf": "^3.0.2"
+    "binary-install": "^0.1.1"
   },
   "scripts": {
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js",
-    "build": "tsc",
-    "prepublish": "yarn build",
     "test": "node ./run.js"
   },
   "files": [
-    "*.js",
-    "*/runner/*",
-    "*/tsconfig.json"
-  ],
-  "devDependencies": {
-    "@types/node": "^16.4.1",
-    "@types/rimraf": "^3.0.1",
-    "ts-node": "^10.1.0",
-    "typescript": "^4.3.5"
-  }
+    "*.js"
+  ]
 }
