@@ -7,7 +7,7 @@
     "sandbox": "./run.js"
   },
   "repository": "https://github.com/near/sandbox",
-  "author": "Willem Wyndham (willem@nearprotocol.com)",
+  "author": "Near Inc (team@near.org)",
   "license": "MIT",
   "private": false,
   "dependencies": {
