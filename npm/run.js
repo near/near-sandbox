@@ -33,6 +33,7 @@ function install() {
 
 if (!binExists()) {
   install();
-} else {
-  run();
-}
+} 
+
+run();
+
