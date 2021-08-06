@@ -1,6 +1,6 @@
 {
   "name": "near-sandbox",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "CLI tool for testing NEAR smart contracts",
   "bin": {
     "near-sandbox": "./run.js",
