@@ -1,6 +1,6 @@
 # NEAR Sandbox
 
-Easily run a local NEAR blockchain.
+NEAR Sandbox lets you easily run a local NEAR blockchain.
 
 NEAR Sandbox is a [custom build](https://github.com/near/nearcore/blob/9f5e20b29f1a15a00fc50d6051b3b44bb6db60b6/Makefile#L67-L69) of the NEAR blockchain optimized for local development and testing. If you're familiar with [Ganache for Ethereum](https://www.trufflesuite.com/ganache), this is similar.
 
@@ -8,7 +8,11 @@ This repository contains code to quickly install pre-built binaries of NEAR Sand
 
 # Using NEAR Sandbox
 
-If you just want to run tests against a NEAR Sandbox instance, check out [near-runner](https://github.com/near/runner) for your favorite language ([for JS](https://github.com/near/runner-js); Rust coming soon). near-runner includes near-sandbox as a dependency, so you will not need to install or run near-sandbox on its own.
+If you just want to run tests against a NEAR Sandbox instance, check out [near-runner](https://github.com/near/runner) for your favorite language:
+- [JavaScript](https://github.com/near/runner-js)
+- Rust (coming soon)
+
+Tip: `near-runner` includes `near-sandbox` as a dependency, so you will not need to install or run `near-sandbox` on its own.
 
 If you want to run NEAR Sandbox on its own, continue reading.
 
@@ -30,7 +34,7 @@ Coming soon
 
       git clone https://github.com/near/nearcore
 
-* `cd` into your nearcore folder and run `make sandbox`
+* `cd` into your `nearcore` folder and run `make sandbox`
 
       cd nearcore
       make sandbox
