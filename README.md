@@ -62,3 +62,9 @@ To find out other things you can do:
 Once you're finished using the sandbox node you can stop it by using <kbd>Ctrl</kbd><kbd>C</kbd>. To clean up the data it generates:
 
     rm -rf /tmp/near-sandbox
+
+# What's special about NEAR Sandbox
+
+NEAR Sandbox includes custom features to make tweaking local and test environments easier.
+
+* `sandbox_patch_state` RPC call, used by [`patchState` in runner-js](https://github.com/near/runner-js#patch-state-on-the-fly), useful for making arbitrary state mutations on any contract or account
