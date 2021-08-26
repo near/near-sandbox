@@ -26,7 +26,7 @@ fn local_rpc_addr(port: u16) -> String {
     format!("0.0.0.0:{}", port)
 }
 
-// HACK: Taken from binary-install to get generated temp_dir generated
+// HACK: Taken from binary-install to get generated dir
 fn hashed_dirname(url: &str, name: &str) -> String {
     let mut hasher = SipHasher13::new();
     url.hash(&mut hasher);
@@ -44,7 +44,6 @@ fn hashed_dirname(url: &str, name: &str) -> String {
     format!("{}-{}", name, hex)
 }
 
-
 fn bin_url() -> String {
     format!(
         "https://cloudflare-ipfs.com/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/{}-near-sandbox.tar.gz",
@@ -53,14 +52,15 @@ fn bin_url() -> String {
 }
 
 fn download_path() -> PathBuf {
-    let mut buf = std::env::temp_dir();
-    buf.push("near");
+    let mut buf = home::home_dir().expect("could not retrieve home_dir");
+    buf.push(".near");
     buf
 }
 
-pub fn bin_path() -> io::Result<PathBuf> {
+/// Returns a path to the binary in the form of {home}/.near/near-sandbox-{hash}/near-sandbox
+pub fn bin_path() -> PathBuf {
     if let Ok(path) = std::env::var("NEAR_SANDBOX_BIN_PATH") {
-        return Ok(PathBuf::from(path));
+        return PathBuf::from(path);
     }
 
     let mut buf = download_path();
@@ -68,10 +68,11 @@ pub fn bin_path() -> io::Result<PathBuf> {
     buf.push("near-sandbox");
     std::env::set_var("NEAR_SANDBOX_BIN_PATH", buf.as_os_str());
 
-    Ok(buf)
+    buf
 }
 
 pub fn install() -> io::Result<PathBuf> {
+    println!("Installing near-sandbox into {}", bin_path().to_str().unwrap());
     let dl_cache = Cache::at(&download_path());
     let dl = dl_cache.download(
         true,
@@ -87,7 +88,7 @@ pub fn install() -> io::Result<PathBuf> {
 }
 
 pub fn ensure_sandbox_bin() -> io::Result<PathBuf> {
-    let mut bin_path = bin_path()?;
+    let mut bin_path = bin_path();
     if !bin_path.exists() {
         bin_path = install()?;
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
