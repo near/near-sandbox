@@ -1,10 +1,11 @@
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
+use std::hash::{Hash, Hasher};
 
+use anyhow::anyhow;
 use binary_install::Cache;
 use siphasher::sip::SipHasher13;
-use std::hash::{Hash, Hasher};
 
 const fn platform() -> &'static str {
     #[cfg(target_os = "linux")]
@@ -70,7 +71,7 @@ pub fn bin_path() -> PathBuf {
     buf
 }
 
-pub fn install() -> io::Result<PathBuf> {
+pub fn install() -> anyhow::Result<PathBuf> {
     println!("Installing near-sandbox into {}", bin_path().to_str().unwrap());
     let dl_cache = Cache::at(&download_path());
     let dl = dl_cache.download(
@@ -79,11 +80,11 @@ pub fn install() -> io::Result<PathBuf> {
         &["near-sandbox"],
         &bin_url(),
     )
-    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
-    .ok_or_else(|| io::Error::new(io::ErrorKind::Other, format!("Unable to download near-sandbox")))?;
+    .map_err(|e| anyhow::Error::msg(e))?
+    .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
 
     dl.binary("near-sandbox")
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        .map_err(|e| anyhow::Error::msg(e))
 }
 
 pub fn ensure_sandbox_bin() -> io::Result<PathBuf> {
