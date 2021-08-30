@@ -1,4 +1,3 @@
-use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::hash::{Hash, Hasher};
@@ -18,7 +17,7 @@ const fn platform() -> &'static str {
     compile_error!("Unsupported platform");
 }
 
-fn local_rpc_addr(port: u16) -> String {
+fn local_addr(port: u16) -> String {
     format!("0.0.0.0:{}", port)
 }
 
@@ -87,7 +86,7 @@ pub fn install() -> anyhow::Result<PathBuf> {
         .map_err(|e| anyhow::Error::msg(e))
 }
 
-pub fn ensure_sandbox_bin() -> io::Result<PathBuf> {
+pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     let mut bin_path = bin_path();
     if !bin_path.exists() {
         bin_path = install()?;
@@ -96,42 +95,50 @@ pub fn ensure_sandbox_bin() -> io::Result<PathBuf> {
     Ok(bin_path)
 }
 
-pub fn start(home_dir: impl AsRef<Path>, port: u16) -> io::Result<Child> {
+pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
-    let home_dir = home_dir.as_ref().to_str().unwrap();
     if cfg!(target_os = "windows") {
         Command::new(bin_path)
-            .args(&[
-                "--home",
-                home_dir,
-                "run",
-                "--rpc-addr",
-                &local_rpc_addr(port),
-            ])
+            .args(options)
             .spawn()
+            .map_err(Into::into)
     } else {
-        Command::new(bin_path)
-            .arg("--home")
-            .arg(home_dir)
-            .arg("run")
-            .arg("--rpc-addr")
-            .arg(&local_rpc_addr(port))
-            .spawn()
+        let mut cmd = Command::new(bin_path);
+        for arg in options {
+            cmd.arg(arg);
+        }
+
+        cmd.spawn().map_err(Into::into)
     }
 }
 
-pub fn init(home_dir: impl AsRef<Path>) -> io::Result<Child> {
+pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
+    let home_dir = home_dir.as_ref().to_str().unwrap();
+    run_with_options(&[
+        "--home",
+        home_dir,
+        "run",
+        "--rpc-addr",
+        &local_addr(rpc_port),
+        "--network-addr",
+        &local_addr(network_port),
+    ])
+}
+
+pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
     if cfg!(target_os = "windows") {
         Command::new(bin_path)
             .args(&["--home", home_dir, "init"])
             .spawn()
+            .map_err(Into::into)
     } else {
         Command::new(bin_path)
             .arg("--home")
             .arg(home_dir)
             .arg("init")
             .spawn()
+            .map_err(Into::into)
     }
 }
