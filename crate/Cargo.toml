@@ -8,3 +8,6 @@ binary-install = "0.0.2"
 hex = "0.3"
 home = "0.5.3"
 siphasher = "0.2.3"
+
+[features]
+global_install = []

@@ -6,7 +6,6 @@ use binary_install::Cache;
 use siphasher::sip::SipHasher13;
 use std::hash::{Hash, Hasher};
 
-
 #[cfg(target_os = "linux")]
 const fn platform() -> &'static str {
     "Linux"
@@ -52,9 +51,13 @@ fn bin_url() -> String {
 }
 
 fn download_path() -> PathBuf {
-    let mut buf = home::home_dir().expect("could not retrieve home_dir");
-    buf.push(".near");
-    buf
+    if cfg!(features = "global_install") {
+        let mut buf = home::home_dir().expect("could not retrieve home_dir");
+        buf.push(".near");
+        buf
+    } else {
+        PathBuf::from(env!("OUT_DIR"))
+    }
 }
 
 /// Returns a path to the binary in the form of {home}/.near/near-sandbox-{hash}/near-sandbox
