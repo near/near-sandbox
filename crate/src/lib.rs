@@ -6,18 +6,14 @@ use binary_install::Cache;
 use siphasher::sip::SipHasher13;
 use std::hash::{Hash, Hasher};
 
-#[cfg(target_os = "linux")]
 const fn platform() -> &'static str {
-    "Linux"
-}
+    #[cfg(target_os = "linux")]
+    return "Linux";
 
-#[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-const fn platform() -> &'static str {
-    "Darwin"
-}
+    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+    return "Darwin";
 
-#[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(target_os = "linux")))]
-const fn platform() -> &'static str {
+    #[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(target_os = "linux")))]
     compile_error!("Unsupported platform");
 }
 
