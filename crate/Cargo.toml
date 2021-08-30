@@ -1,5 +1,5 @@
 [package]
-name = "near-sandbox"
+name = "near-sandbox-utils"
 version = "0.1.0"
 edition = "2018"
 
