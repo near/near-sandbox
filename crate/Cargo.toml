@@ -1,0 +1,14 @@
+[package]
+name = "near-sandbox-utils"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.43"
+binary-install = "0.0.2"
+hex = "0.3"
+home = "0.5.3"
+siphasher = "0.2.3"
+
+[features]
+global_install = []
