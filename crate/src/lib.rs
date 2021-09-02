@@ -41,7 +41,7 @@ fn hashed_dirname(url: &str, name: &str) -> String {
 
 fn bin_url() -> String {
     format!(
-        "https://cloudflare-ipfs.com/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/{}-near-sandbox.tar.gz",
+        "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/{}-near-sandbox.tar.gz",
         platform(),
     )
 }
@@ -71,7 +71,6 @@ pub fn bin_path() -> PathBuf {
 }
 
 pub fn install() -> anyhow::Result<PathBuf> {
-    println!("Installing near-sandbox into {}", bin_path().to_str().unwrap());
     let dl_cache = Cache::at(&download_path());
     let dl = dl_cache.download(
         true,
@@ -90,6 +89,7 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     let mut bin_path = bin_path();
     if !bin_path.exists() {
         bin_path = install()?;
+        println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
     }
     Ok(bin_path)
