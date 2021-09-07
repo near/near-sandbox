@@ -20,7 +20,8 @@ function getPlatform() {
 function getBinary() {
     const platform = getPlatform();
     const version = require('./package.json').version;
-    const url = `https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/${ platform }-near-sandbox.tar.gz`;
+    const baseUrl = process.env.SANDBOX_ARTIFACT_URL || 'https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG';
+    const url = `${baseUrl}/${ platform }-near-sandbox.tar.gz`;
     const name = 'near-sandbox';
     return new Binary(name, url);
 }

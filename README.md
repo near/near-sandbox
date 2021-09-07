@@ -22,6 +22,10 @@ If you want to run NEAR Sandbox on its own, continue reading.
 
     npm i -g near-sandbox
 
+Note: If you have trouble downloading binary from IPFS gateway, you can upload a pre-built near-sandbox tar file to any file storage service and use `SANDBOX_ARTIFACT_URL` environment variable to specify it's base URL.      
+e.g. `> SANDBOX_ARTIFACT_URL=https://s3.aws.com/my-binary npm i near-sandbox`
+
+
 ### With Rust
 
 Coming soon
