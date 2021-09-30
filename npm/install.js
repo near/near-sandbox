@@ -1,2 +1,2 @@
-const getBinary = require('./getBinary');
-getBinary().install();
+const {getBinary} = require('./getBinary');
+getBinary().then(bin => bin.download());
