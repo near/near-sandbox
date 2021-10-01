@@ -17,6 +17,8 @@ async function rm(path: string): Promise<void> {
   } catch (e) {}
 }
 
+const TEST_BIN_DESTINATION =  join(__dirname, "..", 'test_destination');
+
 test.before(async (t) => {
   await rm(LOCAL_BIN_PATH)
   t.false(await fileExists(LOCAL_BIN_PATH));
@@ -53,7 +55,7 @@ test("can download file", async (t) => {
 });
 
 test("can download file to destination", async (t) => {
-  const p = join(__dirname, "..", 'test_destination');
+  const p = TEST_BIN_DESTINATION;
   const bin = await Binary.create(name, realUrl, p);
   await rm(join(p, name));
   t.is(bin.name, name);
@@ -73,8 +75,15 @@ test("can use local file", async (t) => {
 });
 
 test("can run", async (t) => {
-  const bin = await Binary.create(name, realUrl);
-  const res = await bin.run(["--help"], { stdio: [null, inherit, inherit] });
+  const p = join(TEST_BIN_DESTINATION, "to_run");
+  await rm(join(p, name));
+  const bin = await Binary.create(name, realUrl, p);
+  const isCI = process.env["CI"];
+  if (isCI) {
+    t.log("in CI")
+  }
+  const stdio = isCI ? [null, inherit, inherit] : [null, null, null];
+  const res = await bin.run(["--help"], { stdio });
   t.is(res, 0);
 });
 

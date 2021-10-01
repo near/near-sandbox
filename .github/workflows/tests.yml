@@ -13,4 +13,4 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Run tests
-        run: cd npm && yarn && yarn test
+        run: cd npm && yarn && yarn test --verbose
