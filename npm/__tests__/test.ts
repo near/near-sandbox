@@ -2,7 +2,7 @@ import test from "ava";
 import { join, resolve } from "path";
 import { Binary } from "../src";
 import * as fs from "fs/promises";
-import { fileExists } from "../src/utils";
+import { fileExists, inherit } from "../src/utils";
 
 const name = "near-sandbox";
 const LOCAL_PATH = join(__dirname, "..", "bin");
@@ -74,7 +74,7 @@ test("can use local file", async (t) => {
 
 test("can run", async (t) => {
   const bin = await Binary.create(name, realUrl);
-  const res = await bin.run(["--help"], { stdio: [null, null, null] });
+  const res = await bin.run(["--help"], { stdio: [null, inherit, inherit] });
   t.is(res, 0);
 });
 
