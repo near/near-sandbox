@@ -2,7 +2,7 @@ import * as fs from "fs/promises";
 import { join } from "path";
 import * as tar from "tar";
 import got from "got";
-import { fileExists, inherit, searchPath } from "./utils";
+import { fileExists, inherit, rm, searchPath } from "./utils";
 import { spawn } from "child_process";
 import * as stream from "stream";
 import { promisify } from "util";
@@ -66,7 +66,7 @@ export class Binary {
     return pipeline(
       got.stream(this.url),
       new stream.PassThrough(),
-      tar.x({ strip: 1, C: this.installDir }),
+      tar.x({ strip: 1, C: this.installDir })
     );
   }
 
@@ -88,7 +88,7 @@ export class Binary {
     options = { stdio: [null, inherit, inherit] }
   ): Promise<number> {
     if (!(await this.exists())) {
-      try { 
+      try {
         await this.install();
       } catch (err) {
         console.error(err);
@@ -117,5 +117,17 @@ export class Binary {
     options = { stdio: [null, inherit, inherit] }
   ): Promise<void> {
     process.exit(await this.run(cliArgs, options));
+  }
+
+  async uninstall(): Promise<void> {
+    if (
+      this.installDir === Binary.DEFAULT_INSTALL_DIR &&
+      (await this.exists())
+    ) {
+      await rm(this.binPath);
+      if (await this.exists()) {
+        throw new Error(`Failed to remove binary located ${this.binPath}`);
+      }
+    }
   }
 }

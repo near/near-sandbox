@@ -1,4 +1,4 @@
-import { stat } from "fs/promises";
+import { stat, rm as RM } from "fs/promises";
 import { join } from "path";
 
 export async function fileExists(s: string): Promise<boolean> {
@@ -24,3 +24,8 @@ export async function searchPath(filename: string): Promise<string | undefined> 
 
 export const inherit: 'inherit' = 'inherit';
 
+export async function rm(path: string): Promise<void> {
+  try {
+    await RM(path);
+  } catch (e) {}
+}

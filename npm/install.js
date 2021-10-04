@@ -1,2 +1,1 @@
-const {getBinary} = require('./getBinary');
-getBinary().then(bin => bin.download());
+module.exports = require("./dist/install");
