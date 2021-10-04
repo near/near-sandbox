@@ -35,12 +35,7 @@ test("can create", async (t) => {
 
 test("throws if url is bad", async (t) => {
   const bin = await Binary.create(name, fakeUrl);
-  try {
-    await bin.install();
-    t.true(false, "Failed to throw");
-  } catch(_) {
-    t.true(true);
-  }
+  await t.throwsAsync(bin.install());
 })
 
 test("can download file", async (t) => {
