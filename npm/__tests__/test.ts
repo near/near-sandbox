@@ -4,7 +4,7 @@ import { Binary } from "../src";
 import { fileExists, inherit, rm } from "../src/utils";
 
 process.env['PATH'] = "";
-
+const isCI = process.env["CI"];
 const name = "near-sandbox";
 const LOCAL_PATH = Binary.DEFAULT_INSTALL_DIR;
 const LOCAL_BIN_PATH = join(LOCAL_PATH, name);
@@ -67,14 +67,20 @@ test("can use local file", async (t) => {
   t.assert(await bin.exists());
 });
 
-test("can run", async (t) => {
+test("can install and then run", async (t) => {
+  const p = join(TEST_BIN_DESTINATION, "install_then_run");
+  await rm(join(p, name));
+  const bin = await Binary.create(name, realUrl, p);
+  await bin.install();
+  const stdio = isCI ? [null, inherit, inherit] : [null, null, null];
+  const res = await bin.run(["--help"], { stdio });
+  t.not(res, 1);
+});
+
+test("can run without install", async (t) => {
   const p = join(TEST_BIN_DESTINATION, "to_run");
   await rm(join(p, name));
   const bin = await Binary.create(name, realUrl, p);
-  const isCI = process.env["CI"];
-  if (isCI) {
-    t.log("in CI")
-  }
   const stdio = isCI ? [null, inherit, inherit] : [null, null, null];
   const res = await bin.run(["--help"], { stdio });
   t.not(res, 1);
