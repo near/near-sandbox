@@ -22,13 +22,13 @@ export function getBinary(name: string = "near-sandbox"): Promise<Binary> {
   // Will use version after publishing to AWS
   // const version = require("./package.json").version;
   const fromEnv = process.env["SANDBOX_ARTIFACT_URL"];
-  const baseUrl = [
+  const baseUrls = [
     "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG",
     "https://cloudflare-ipfs.com/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG",
   ];
   if (fromEnv) {
-    baseUrl.unshift(fromEnv);
+    baseUrls.unshift(fromEnv);
   }
-  const url = `${baseUrl}/${platform}-${name}.tar.gz`;
-  return Binary.create(name, url);
+  const urls = baseUrls.map(baseUrl => `${baseUrl}/${platform}-${name}.tar.gz`);
+  return Binary.create(name, urls);
 }
