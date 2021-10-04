@@ -105,6 +105,15 @@ class Binary {
     async runAndExit(cliArgs, options = { stdio: [null, utils_1.inherit, utils_1.inherit] }) {
         process.exit(await this.run(cliArgs, options));
     }
+    async uninstall() {
+        if (this.installDir === Binary.DEFAULT_INSTALL_DIR &&
+            (await this.exists())) {
+            await (0, utils_1.rm)(this.binPath);
+            if (await this.exists()) {
+                throw new Error(`Failed to remove binary located ${this.binPath}`);
+            }
+        }
+    }
 }
 exports.Binary = Binary;
 Object.defineProperty(Binary, "DEFAULT_INSTALL_DIR", {

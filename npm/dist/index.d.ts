@@ -22,4 +22,5 @@ export declare class Binary {
     runAndExit(cliArgs?: string[], options?: {
         stdio: ("inherit" | null)[];
     }): Promise<void>;
+    uninstall(): Promise<void>;
 }
