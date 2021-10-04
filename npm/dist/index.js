@@ -11,7 +11,7 @@ const stream = require("stream");
 const util_1 = require("util");
 const pipeline = (0, util_1.promisify)(stream.pipeline);
 class Binary {
-    constructor(name, path, installDir = Binary.DEFAULT_INSTALL_DIR) {
+    constructor(name, url, installDir = Binary.DEFAULT_INSTALL_DIR) {
         Object.defineProperty(this, "name", {
             enumerable: true,
             configurable: true,
@@ -24,18 +24,28 @@ class Binary {
             writable: true,
             value: installDir
         });
-        Object.defineProperty(this, "url", {
+        Object.defineProperty(this, "urls", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: void 0
         });
         let errors = [];
+        let urls = [];
+        if (typeof url === "string" || url instanceof URL) {
+            urls.push(url);
+        }
+        else {
+            if (url.length == 0) {
+                throw new Error("No URL provided got empty array");
+            }
+            urls = url;
+        }
         if (!name || typeof name !== "string") {
             errors.push("You must specify the name of your binary as a string");
         }
         try {
-            this.url = new URL(path);
+            this.urls = urls.map((path) => new URL(path));
         }
         catch (e) {
             errors.push(e);
@@ -63,17 +73,19 @@ class Binary {
     get binPath() {
         return (0, path_1.join)(this.installDir, this.name);
     }
-    download() {
-        return pipeline(got_1.default.stream(this.url), new stream.PassThrough(), tar.x({ strip: 1, C: this.installDir }));
+    download(url) {
+        return pipeline(got_1.default.stream(url), new stream.PassThrough(), tar.x({ strip: 1, C: this.installDir }));
     }
     async install() {
-        try {
-            await this.download();
+        for (let url of this.urls) {
+            try {
+                await this.download(url);
+                return true;
+            }
+            catch (error) {
+            }
         }
-        catch (error) {
-            throw new Error(`Failed to download binary ${this.url.toString()}`);
-        }
-        return true;
+        throw new Error(`Failed to download from: \n${this.urls.join('\n')}`);
     }
     async exists() {
         return await (0, utils_1.fileExists)(this.binPath);

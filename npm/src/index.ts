@@ -10,20 +10,29 @@ import { promisify } from "util";
 const pipeline = promisify(stream.pipeline);
 
 export class Binary {
-  url!: URL;
+  urls!: URL[];
   static readonly DEFAULT_INSTALL_DIR = join(__dirname, "..", "bin");
 
   protected constructor(
     public name: string,
-    path: URL | string,
+    url: string | URL | string[] | URL[],
     public installDir: string = Binary.DEFAULT_INSTALL_DIR
   ) {
     let errors = [];
+    let urls = [];
+    if (typeof url === "string" || url instanceof URL) {
+      urls.push(url);
+    } else {
+      if (url.length == 0) {
+        throw new Error("No URL provided got empty array");
+      }
+      urls = url;
+    }
     if (!name || typeof name !== "string") {
       errors.push("You must specify the name of your binary as a string");
     }
     try {
-      this.url = new URL(path);
+      this.urls = urls.map((path) => new URL(path));
     } catch (e) {
       errors.push(e);
     }
@@ -48,7 +57,7 @@ export class Binary {
    */
   static async create(
     name: string,
-    path: string | URL,
+    path: string | URL | string[] | URL[],
     destination?: string
   ): Promise<Binary> {
     const bin = new Binary(name, path, destination ?? (await searchPath(name)));
@@ -62,21 +71,23 @@ export class Binary {
     return join(this.installDir, this.name);
   }
 
-  download(): Promise<void> {
+  download(url: URL): Promise<void> {
     return pipeline(
-      got.stream(this.url),
+      got.stream(url),
       new stream.PassThrough(),
       tar.x({ strip: 1, C: this.installDir })
     );
   }
 
   async install(): Promise<boolean> {
-    try {
-      await this.download();
-    } catch (error: unknown) {
-      throw new Error(`Failed to download binary ${this.url.toString()}`);
+    for (let url of this.urls) {
+      try {
+        await this.download(url);
+        return true;
+      } catch (error: unknown) {
+      }
     }
-    return true;
+    throw new Error(`Failed to download from: \n${this.urls.join('\n')}`);
   }
 
   async exists(): Promise<boolean> {

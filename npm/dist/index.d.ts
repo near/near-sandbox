@@ -1,9 +1,9 @@
 export declare class Binary {
     name: string;
     installDir: string;
-    url: URL;
+    urls: URL[];
     static readonly DEFAULT_INSTALL_DIR: string;
-    protected constructor(name: string, path: URL | string, installDir?: string);
+    protected constructor(name: string, url: string | URL | string[] | URL[], installDir?: string);
     /**
      *
      * @param name binary name, e.g. 'git'
@@ -11,9 +11,9 @@ export declare class Binary {
      * @param destination Directory to put the binary
      * @returns
      */
-    static create(name: string, path: string | URL, destination?: string): Promise<Binary>;
+    static create(name: string, path: string | URL | string[] | URL[], destination?: string): Promise<Binary>;
     get binPath(): string;
-    download(): Promise<void>;
+    download(url: URL): Promise<void>;
     install(): Promise<boolean>;
     exists(): Promise<boolean>;
     run(cliArgs?: string[], options?: {

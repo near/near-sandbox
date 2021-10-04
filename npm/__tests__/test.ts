@@ -25,7 +25,7 @@ test.before(async (t) => {
 test("can create", async (t) => {
   const bin = await Binary.create(name, fakeUrl);
   t.is(bin.name, name);
-  t.deepEqual(bin.url, new URL(fakeUrl));
+  t.deepEqual(bin.urls[0], new URL(fakeUrl));
   t.is(bin.installDir, LOCAL_PATH);
   t.false(await bin.exists());
 });
@@ -38,7 +38,7 @@ test("throws if url is bad", async (t) => {
 test("can install and uninstall file", async (t) => {
   const bin = await Binary.create(name, realUrl);
   t.is(bin.name, name);
-  t.deepEqual(bin.url, new URL(realUrl));
+  t.deepEqual(bin.urls[0], new URL(realUrl));
   t.is(bin.installDir, LOCAL_PATH);
   t.false(await bin.exists());
   t.assert(await bin.install());
@@ -53,9 +53,20 @@ test("can install file to destination", async (t) => {
   const bin = await Binary.create(name, realUrl, p);
   await rm(join(p, name));
   t.is(bin.name, name);
-  t.deepEqual(bin.url, new URL(realUrl));
+  t.deepEqual(bin.urls[0], new URL(realUrl));
   t.not(bin.installDir, LOCAL_PATH);
-  t.not(bin.installDir, Binary.DEFAULT_INSTALL_DIR);
+  t.false(await bin.exists());
+  t.assert(await bin.install());
+  t.assert(await bin.exists());
+});
+
+test("can install file to destination with multiple urls", async (t) => {
+  const p = TEST_BIN_DESTINATION;
+  const bin = await Binary.create(name, [fakeUrl, realUrl], p);
+  await rm(join(p, name));
+  t.is(bin.name, name);
+  t.deepEqual(bin.urls[1], new URL(realUrl));
+  t.not(bin.installDir, LOCAL_PATH);
   t.false(await bin.exists());
   t.assert(await bin.install());
   t.assert(await bin.exists());
