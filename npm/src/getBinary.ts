@@ -18,6 +18,7 @@ export function getBinary(name: string = "near-sandbox"): Promise<Binary> {
   const PATH = process.env["PATH"];
   process.env["PATH"] = `${NEAR_SANDBOX_BIN_PATH}:${PATH}`;
   const platform = getPlatform();
+  // Will use version after publishing to AWS
   // const version = require("./package.json").version;
   const baseUrl =
     process.env["SANDBOX_ARTIFACT_URL"] ??

@@ -19,6 +19,7 @@ function getBinary(name = "near-sandbox") {
     const PATH = process.env["PATH"];
     process.env["PATH"] = `${NEAR_SANDBOX_BIN_PATH}:${PATH}`;
     const platform = getPlatform();
+    // Will use version after publishing to AWS
     // const version = require("./package.json").version;
     const baseUrl = (_b = process.env["SANDBOX_ARTIFACT_URL"]) !== null && _b !== void 0 ? _b : "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG";
     const url = `${baseUrl}/${platform}-${name}.tar.gz`;

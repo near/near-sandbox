@@ -2,6 +2,7 @@ import test from "ava";
 import { join, resolve } from "path";
 import { Binary } from "../src";
 import { fileExists, inherit, rm } from "../src/utils";
+import {type} from "os";
 
 process.env['PATH'] = "";
 const isCI = process.env["CI"];
@@ -10,7 +11,7 @@ const LOCAL_PATH = Binary.DEFAULT_INSTALL_DIR;
 const LOCAL_BIN_PATH = join(LOCAL_PATH, name);
 const fakeUrl = "https://example.com";
 const realUrl =
-  "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/Darwin-near-sandbox.tar.gz";
+  `https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/${type}-near-sandbox.tar.gz`;
 
 
 
