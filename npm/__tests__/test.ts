@@ -4,6 +4,8 @@ import { Binary } from "../src";
 import * as fs from "fs/promises";
 import { fileExists, inherit } from "../src/utils";
 
+process.env['PATH'] = "";
+
 const name = "near-sandbox";
 const LOCAL_PATH = join(__dirname, "..", "bin");
 const LOCAL_BIN_PATH = join(LOCAL_PATH, name);
