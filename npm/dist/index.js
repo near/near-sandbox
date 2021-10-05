@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Binary = void 0;
 const fs = require("fs/promises");
+const url_1 = require("url");
 const path_1 = require("path");
 const tar = require("tar");
 const got_1 = require("got");
@@ -32,7 +33,7 @@ class Binary {
         });
         let errors = [];
         let urls = [];
-        if (typeof url === "string" || url instanceof URL) {
+        if (typeof url === "string" || url instanceof url_1.URL) {
             urls.push(url);
         }
         else {
@@ -45,7 +46,7 @@ class Binary {
             errors.push("You must specify the name of your binary as a string");
         }
         try {
-            this.urls = urls.map((path) => new URL(path));
+            this.urls = urls.map((path) => typeof path === "string" ? new url_1.URL(path) : path);
         }
         catch (e) {
             errors.push(e);
@@ -82,10 +83,9 @@ class Binary {
                 await this.download(url);
                 return true;
             }
-            catch (error) {
-            }
+            catch (error) { }
         }
-        throw new Error(`Failed to download from: \n${this.urls.join('\n')}`);
+        throw new Error(`Failed to download from: \n${this.urls.join("\n")}`);
     }
     async exists() {
         return await (0, utils_1.fileExists)(this.binPath);
