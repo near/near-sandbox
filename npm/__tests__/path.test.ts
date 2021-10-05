@@ -3,7 +3,7 @@ import { join } from "path";
 import { Binary } from "../src";
 
 const TEST_FILES_PATH = join(__dirname, "..", "test_files");
-process.env['PATH'] = TEST_FILES_PATH;
+process.env['NEAR_SANDBOX_BINARY_PATH'] = TEST_FILES_PATH;
 
 const name = "near-sandbox";
 const fakeUrl = "https://example.com";

@@ -13,22 +13,26 @@ function getPlatform() {
 }
 
 export function getBinary(name: string = "near-sandbox"): Promise<Binary> {
-  const NEAR_SANDBOX_BIN_PATH =
-    process.env["NEAR_SANDBOX_BIN_PATH"] ??
-    join(os.homedir(), ".near", "sandbox");
-  const PATH = process.env["PATH"];
-  process.env["PATH"] = `${NEAR_SANDBOX_BIN_PATH}:${PATH}`;
+  if (!process.env["NEAR_SANDBOX_BIN_PATH"]) {
+    process.env["NEAR_SANDBOX_BINARY_PATH"] = join(
+      os.homedir(),
+      ".near",
+      "sandbox"
+    );
+  }
+
   const platform = getPlatform();
   // Will use version after publishing to AWS
   // const version = require("./package.json").version;
   const fromEnv = process.env["SANDBOX_ARTIFACT_URL"];
-  const baseUrls = [
+  const urls = [
     "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG",
     "https://cloudflare-ipfs.com/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG",
-  ];
+  ].map((baseUrl) => `${baseUrl}/${platform}-${name}.tar.gz`);
+
   if (fromEnv) {
-    baseUrls.unshift(fromEnv);
+    urls.unshift(fromEnv);
   }
-  const urls = baseUrls.map(baseUrl => `${baseUrl}/${platform}-${name}.tar.gz`);
+
   return Binary.create(name, urls);
 }

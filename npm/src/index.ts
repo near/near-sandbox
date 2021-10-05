@@ -1,4 +1,5 @@
 import * as fs from "fs/promises";
+import { URL } from "url";
 import { join } from "path";
 import * as tar from "tar";
 import got from "got";
@@ -32,7 +33,7 @@ export class Binary {
       errors.push("You must specify the name of your binary as a string");
     }
     try {
-      this.urls = urls.map((path) => new URL(path));
+      this.urls = urls.map((path) => typeof path === "string" ? new URL(path): path);
     } catch (e) {
       errors.push(e);
     }
@@ -84,10 +85,9 @@ export class Binary {
       try {
         await this.download(url);
         return true;
-      } catch (error: unknown) {
-      }
+      } catch (error: unknown) {}
     }
-    throw new Error(`Failed to download from: \n${this.urls.join('\n')}`);
+    throw new Error(`Failed to download from: \n${this.urls.join("\n")}`);
   }
 
   async exists(): Promise<boolean> {
