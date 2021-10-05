@@ -32,6 +32,7 @@
   },
   "files": [
     "*.js",
-    "dist/*"
+    "dist/*.ts",
+    "dist/*.js"
   ]
 }
