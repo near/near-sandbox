@@ -14,22 +14,20 @@ function getPlatform() {
     throw new Error(`Unsupported platform: ${type} ${arch}`);
 }
 function getBinary(name = "near-sandbox") {
-    var _a;
-    const NEAR_SANDBOX_BIN_PATH = (_a = process.env["NEAR_SANDBOX_BIN_PATH"]) !== null && _a !== void 0 ? _a : (0, path_1.join)(os.homedir(), ".near", "sandbox");
-    const PATH = process.env["PATH"];
-    process.env["PATH"] = `${NEAR_SANDBOX_BIN_PATH}:${PATH}`;
+    if (!process.env["NEAR_SANDBOX_BIN_PATH"]) {
+        process.env["NEAR_SANDBOX_BINARY_PATH"] = (0, path_1.join)(os.homedir(), ".near", "sandbox");
+    }
     const platform = getPlatform();
     // Will use version after publishing to AWS
     // const version = require("./package.json").version;
     const fromEnv = process.env["SANDBOX_ARTIFACT_URL"];
-    const baseUrls = [
+    const urls = [
         "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG",
         "https://cloudflare-ipfs.com/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG",
-    ];
+    ].map((baseUrl) => `${baseUrl}/${platform}-${name}.tar.gz`);
     if (fromEnv) {
-        baseUrls.unshift(fromEnv);
+        urls.unshift(fromEnv);
     }
-    const urls = baseUrls.map(baseUrl => `${baseUrl}/${platform}-${name}.tar.gz`);
     return _1.Binary.create(name, urls);
 }
 exports.getBinary = getBinary;

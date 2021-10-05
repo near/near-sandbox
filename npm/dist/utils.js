@@ -14,20 +14,16 @@ async function fileExists(s) {
 }
 exports.fileExists = fileExists;
 async function searchPath(filename) {
-    var _a, _b;
-    const paths = (_b = (_a = process.env["PATH"]) === null || _a === void 0 ? void 0 : _a.split(":")) !== null && _b !== void 0 ? _b : [];
-    const priorityPath = process.env['LOCAL_BINARY_PATH'];
-    if (priorityPath && priorityPath.length > 0) {
-        paths.unshift(priorityPath);
-    }
-    for (const p of paths) {
-        if (await fileExists((0, path_1.join)(p, filename)))
-            return p;
+    const binPath = process.env["NEAR_SANDBOX_BINARY_PATH"];
+    if (binPath &&
+        binPath.length > 0 &&
+        (await fileExists((0, path_1.join)(binPath, filename)))) {
+        return binPath;
     }
     return undefined;
 }
 exports.searchPath = searchPath;
-exports.inherit = 'inherit';
+exports.inherit = "inherit";
 async function rm(path) {
     try {
         await (0, promises_1.rm)(path);
