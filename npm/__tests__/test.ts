@@ -1,7 +1,7 @@
 import test from "ava";
 import { join, resolve } from "path";
 import { Binary } from "../src";
-import {AWSUrl} from "../src/getBinary";
+import { AWSUrl } from "../src/getBinary";
 import { fileExists, inherit, rm } from "../src/utils";
 
 process.env['PATH'] = "";
