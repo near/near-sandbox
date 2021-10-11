@@ -7,13 +7,13 @@ use binary_install::Cache;
 use siphasher::sip::SipHasher13;
 
 const fn platform() -> &'static str {
-    #[cfg(target_os = "linux")]
-    return "Linux";
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    return "Linux-x86_64";
 
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-    return "Darwin";
+    return "Darwin-x86_64";
 
-    #[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(target_os = "linux")))]
+    #[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(all(target_os = "linux", target_arch = "x86_64"))))]
     compile_error!("Unsupported platform");
 }
 
@@ -41,7 +41,7 @@ fn hashed_dirname(url: &str, name: &str) -> String {
 
 fn bin_url() -> String {
     format!(
-        "https://ipfs.io/ipfs/QmZ6MQ9VMxBcahcmJZdfvUAbyQpjnbHa9ixbqnMTq2k8FG/{}-near-sandbox.tar.gz",
+        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/master/2c9375ee5ee307c2ce870c7dbd25eefd84fe8c36/near-sandbox.tar.gz",
         platform(),
     )
 }
