@@ -2,7 +2,7 @@
 name = "near-sandbox-utils"
 version = "0.1.0"
 edition = "2018"
-license = "Apache-2.0 or MIT"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/near/sandbox"
 description = """
 Utility library for launching NEAR sandbox environments.
