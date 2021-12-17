@@ -8,9 +8,9 @@ This repository contains code to quickly install pre-built binaries of NEAR Sand
 
 # Using NEAR Sandbox
 
-If you just want to run tests against a NEAR Sandbox instance, check out [near-runner](https://github.com/near/runner) for your favorite language:
-- [JavaScript](https://github.com/near/runner-js)
-- Rust (coming soon)
+If you just want to run tests against a NEAR Sandbox instance, check out [near-workspaces](https://github.com/near/workspaces) for your favorite language:
+- [JavaScript](https://github.com/near/workspaces-js)
+- [Rust](https://github.com/near/workspaces-rs)
 
 Tip: `near-runner` includes `near-sandbox` as a dependency, so you will not need to install or run `near-sandbox` on its own.
 
@@ -22,7 +22,7 @@ If you want to run NEAR Sandbox on its own, continue reading.
 
     npm i -g near-sandbox
 
-Note: If you have trouble downloading binary from IPFS gateway, you can upload a pre-built near-sandbox tar file to any file storage service and use `SANDBOX_ARTIFACT_URL` environment variable to specify it's base URL.      
+Note: If you have trouble downloading binary from IPFS gateway, you can upload a pre-built near-sandbox tar file to any file storage service and use `SANDBOX_ARTIFACT_URL` environment variable to specify it's base URL.
 e.g. `> SANDBOX_ARTIFACT_URL=https://s3.aws.com/my-binary npm i near-sandbox`
 
 
