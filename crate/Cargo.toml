@@ -11,9 +11,9 @@ Utility library for launching NEAR sandbox environments.
 [dependencies]
 anyhow = "1"
 binary-install = "0.0.2"
+chrono = "0.4"
 hex = "0.3"
 home = "0.5.3"
-siphasher = "0.2.3"
 
 [features]
 global_install = []

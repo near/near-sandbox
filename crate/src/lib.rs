@@ -1,10 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
-use std::hash::{Hash, Hasher};
 
 use anyhow::anyhow;
 use binary_install::Cache;
-use siphasher::sip::SipHasher13;
+use chrono::Utc;
 
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -19,24 +18,6 @@ const fn platform() -> &'static str {
 
 fn local_addr(port: u16) -> String {
     format!("0.0.0.0:{}", port)
-}
-
-// HACK: Taken from binary-install to get generated dir
-fn hashed_dirname(url: &str, name: &str) -> String {
-    let mut hasher = SipHasher13::new();
-    url.hash(&mut hasher);
-    let result = hasher.finish();
-    let hex = hex::encode(&[
-        (result >> 0) as u8,
-        (result >> 8) as u8,
-        (result >> 16) as u8,
-        (result >> 24) as u8,
-        (result >> 32) as u8,
-        (result >> 40) as u8,
-        (result >> 48) as u8,
-        (result >> 56) as u8,
-    ]);
-    format!("{}-{}", name, hex)
 }
 
 fn bin_url() -> String {
@@ -63,7 +44,6 @@ pub fn bin_path() -> PathBuf {
     }
 
     let mut buf = download_path();
-    buf.push(hashed_dirname(&bin_url(), "near-sandbox"));
     buf.push("near-sandbox");
     std::env::set_var("NEAR_SANDBOX_BIN_PATH", buf.as_os_str());
 
@@ -71,18 +51,26 @@ pub fn bin_path() -> PathBuf {
 }
 
 pub fn install() -> anyhow::Result<PathBuf> {
+    // Download binary into temp dir
+    let tmp_dir = format!("near-sandbox-{}", Utc::now());
     let dl_cache = Cache::at(&download_path());
     let dl = dl_cache.download(
         true,
-        "near-sandbox",
+        &tmp_dir,
         &["near-sandbox"],
         &bin_url(),
     )
-    .map_err(|e| anyhow::Error::msg(e))?
+    .map_err(anyhow::Error::msg)?
     .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
 
-    dl.binary("near-sandbox")
-        .map_err(|e| anyhow::Error::msg(e))
+    let path = dl.binary("near-sandbox")
+        .map_err(anyhow::Error::msg)?;
+
+    // Move near-sandbox binary to correct location from temp folder.
+    let dest = download_path().join("near-sandbox");
+    std::fs::rename(path, &dest)?;
+
+    Ok(dest)
 }
 
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
