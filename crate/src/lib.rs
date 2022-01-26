@@ -85,19 +85,11 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
 
 pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
-    if cfg!(target_os = "windows") {
-        Command::new(bin_path)
-            .args(options)
-            .spawn()
-            .map_err(Into::into)
-    } else {
-        let mut cmd = Command::new(bin_path);
-        for arg in options {
-            cmd.arg(arg);
-        }
-
-        cmd.spawn().map_err(Into::into)
-    }
+    Command::new(bin_path)
+        .args(options)
+        .envs(std::env::vars())
+        .spawn()
+        .map_err(Into::into)
 }
 
 pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
@@ -116,17 +108,9 @@ pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyh
 pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
-    if cfg!(target_os = "windows") {
-        Command::new(bin_path)
-            .args(&["--home", home_dir, "init"])
-            .spawn()
-            .map_err(Into::into)
-    } else {
-        Command::new(bin_path)
-            .arg("--home")
-            .arg(home_dir)
-            .arg("init")
-            .spawn()
-            .map_err(Into::into)
-    }
+    Command::new(bin_path)
+        .envs(std::env::vars())
+        .args(&["--home", home_dir, "init"])
+        .spawn()
+        .map_err(Into::into)
 }
