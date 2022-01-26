@@ -87,7 +87,7 @@ pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     Command::new(bin_path)
         .args(options)
-        .envs(std::env::vars())
+        .envs(log_vars())
         .spawn()
         .map_err(Into::into)
 }
@@ -109,8 +109,16 @@ pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(bin_path)
-        .envs(std::env::vars())
+        .envs(log_vars())
         .args(&["--home", home_dir, "init"])
         .spawn()
         .map_err(Into::into)
+}
+
+fn log_vars() -> Vec<(String, String)> {
+    let mut vars = Vec::new();
+    if let Ok(val) = std::env::var("NEAR_SANDBOX_LOG") {
+        vars.push(("RUST_LOG".into(), val));
+    }
+    vars
 }
