@@ -120,5 +120,8 @@ fn log_vars() -> Vec<(String, String)> {
     if let Ok(val) = std::env::var("NEAR_SANDBOX_LOG") {
         vars.push(("RUST_LOG".into(), val));
     }
+    if let Ok(val) = std::env::var("NEAR_SANDBOX_LOG_STYLE") {
+        vars.push(("RUST_LOG_STYLE".into(), val));
+    }
     vars
 }
