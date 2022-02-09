@@ -6,7 +6,7 @@ use binary_install::Cache;
 use chrono::Utc;
 
 /// The commit hash on nearcore that we want to point to, to retrieve the sandbox binary:
-const COMMIT: &str = "5bc89098a20fb580b97bb56b6711b5ca2a86a4c3";
+const COMMIT: &str = "2c9375ee5ee307c2ce870c7dbd25eefd84fe8c36";
 
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
