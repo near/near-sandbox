@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command};
+use std::process::{Child, Command, Stdio};
 
 use anyhow::anyhow;
 use binary_install::Cache;
@@ -83,16 +83,42 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     Ok(bin_path)
 }
 
-pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
+pub struct SandboxHandle {
+    pub sandbox_process: Child,
+    /// Exit process will automatically kill the sandbox instance once its parent process dies. We
+    /// hold on to the process object because we need the stdin pipe to not be dropped.
+    _exit_process: Child,
+}
+
+pub fn run_with_options(options: &[&str]) -> anyhow::Result<SandboxHandle> {
     let bin_path = ensure_sandbox_bin()?;
-    Command::new(bin_path)
+
+    let sandbox_process = Command::new(bin_path)
         .args(options)
         .envs(log_vars())
         .spawn()
-        .map_err(Into::into)
+        .map_err::<anyhow::Error, _>(Into::into)?;
+
+    // An auxiliary process that waits for stdin pipe to close and kills the sandbox afterwards.
+    // The trick is that once parent process dies, it will close its end of the pipe thus
+    // triggering this process.
+    let exit_process = Command::new("sh")
+        .arg("-c")
+        .arg(format!(
+            "read dummy; kill {}",
+            sandbox_process.id()
+        ))
+        .stdin(Stdio::piped())
+        .spawn()
+        .map_err::<anyhow::Error, _>(Into::into)?;
+
+    Ok(SandboxHandle {
+        sandbox_process,
+        _exit_process: exit_process
+    })
 }
 
-pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
+pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<SandboxHandle> {
     let home_dir = home_dir.as_ref().to_str().unwrap();
     run_with_options(&[
         "--home",
