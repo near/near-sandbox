@@ -12,7 +12,10 @@ const fn platform() -> &'static str {
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     return "Darwin-x86_64";
 
-    #[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(all(target_os = "linux", target_arch = "x86_64"))))]
+    #[cfg(all(
+        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(all(target_os = "linux", target_arch = "x86_64"))
+    ))]
     compile_error!("Unsupported platform");
 }
 
@@ -54,17 +57,12 @@ pub fn install() -> anyhow::Result<PathBuf> {
     // Download binary into temp dir
     let tmp_dir = format!("near-sandbox-{}", Utc::now());
     let dl_cache = Cache::at(&download_path());
-    let dl = dl_cache.download(
-        true,
-        &tmp_dir,
-        &["near-sandbox"],
-        &bin_url(),
-    )
-    .map_err(anyhow::Error::msg)?
-    .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
+    let dl = dl_cache
+        .download(true, &tmp_dir, &["near-sandbox"], &bin_url())
+        .map_err(anyhow::Error::msg)?
+        .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
 
-    let path = dl.binary("near-sandbox")
-        .map_err(anyhow::Error::msg)?;
+    let path = dl.binary("near-sandbox").map_err(anyhow::Error::msg)?;
 
     // Move near-sandbox binary to correct location from temp folder.
     let dest = download_path().join("near-sandbox");
@@ -105,14 +103,18 @@ pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyh
     ])
 }
 
-pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
+pub fn init_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
-    let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(bin_path)
         .envs(log_vars())
-        .args(&["--home", home_dir, "init"])
+        .args(options)
         .spawn()
         .map_err(Into::into)
+}
+
+pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
+    let home_dir = home_dir.as_ref().to_str().unwrap();
+    init_with_options(&["--home", home_dir, "init"])
 }
 
 fn log_vars() -> Vec<(String, String)> {
