@@ -22,7 +22,7 @@ fn local_addr(port: u16) -> String {
 
 fn bin_url() -> String {
     format!(
-        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/master/2c9375ee5ee307c2ce870c7dbd25eefd84fe8c36/near-sandbox.tar.gz",
+        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/master/712743ecbd76332ebdc254a89fbaf9c2adff1164/near-sandbox.tar.gz",
         platform(),
     )
 }
