@@ -12,7 +12,10 @@ const fn platform() -> &'static str {
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     return "Darwin-x86_64";
 
-    #[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(all(target_os = "linux", target_arch = "x86_64"))))]
+    #[cfg(all(
+        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(all(target_os = "linux", target_arch = "x86_64"))
+    ))]
     compile_error!("Unsupported platform");
 }
 
@@ -54,17 +57,12 @@ pub fn install() -> anyhow::Result<PathBuf> {
     // Download binary into temp dir
     let tmp_dir = format!("near-sandbox-{}", Utc::now());
     let dl_cache = Cache::at(&download_path());
-    let dl = dl_cache.download(
-        true,
-        &tmp_dir,
-        &["near-sandbox"],
-        &bin_url(),
-    )
-    .map_err(anyhow::Error::msg)?
-    .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
+    let dl = dl_cache
+        .download(true, &tmp_dir, &["near-sandbox"], &bin_url())
+        .map_err(anyhow::Error::msg)?
+        .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
 
-    let path = dl.binary("near-sandbox")
-        .map_err(anyhow::Error::msg)?;
+    let path = dl.binary("near-sandbox").map_err(anyhow::Error::msg)?;
 
     // Move near-sandbox binary to correct location from temp folder.
     let dest = download_path().join("near-sandbox");
