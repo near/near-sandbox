@@ -1,9 +1,10 @@
-use std::path::{Path, PathBuf};
-use std::process::{Child, Command};
-
 use anyhow::anyhow;
+use async_process::{Child, Command};
 use binary_install::Cache;
 use chrono::Utc;
+use std::path::{Path, PathBuf};
+
+pub mod sync;
 
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -81,16 +82,20 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     Ok(bin_path)
 }
 
-pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
-    let bin_path = ensure_sandbox_bin()?;
+pub async fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
+    let bin_path = crate::ensure_sandbox_bin()?;
     Command::new(bin_path)
         .args(options)
-        .envs(log_vars())
+        .envs(crate::log_vars())
         .spawn()
         .map_err(Into::into)
 }
 
-pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
+pub async fn run(
+    home_dir: impl AsRef<Path>,
+    rpc_port: u16,
+    network_port: u16,
+) -> anyhow::Result<Child> {
     let home_dir = home_dir.as_ref().to_str().unwrap();
     run_with_options(&[
         "--home",
@@ -101,9 +106,10 @@ pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyh
         "--network-addr",
         &local_addr(network_port),
     ])
+    .await
 }
 
-pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
+pub async fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(bin_path)
