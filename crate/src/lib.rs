@@ -5,6 +5,10 @@ use anyhow::anyhow;
 use binary_install::Cache;
 use chrono::Utc;
 
+// The current version of the sandbox node we want to point to. This can be updated from
+// time to time, but probably should be close to when a release is made.
+const DEFAULT_SANDBOX_COMMIT_HASH: &str = "2c9375ee5ee307c2ce870c7dbd25eefd84fe8c36";
+
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     return "Linux-x86_64";
@@ -12,7 +16,10 @@ const fn platform() -> &'static str {
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     return "Darwin-x86_64";
 
-    #[cfg(all(not(all(target_os = "macos", target_arch = "x86_64")), not(all(target_os = "linux", target_arch = "x86_64"))))]
+    #[cfg(all(
+        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(all(target_os = "linux", target_arch = "x86_64"))
+    ))]
     compile_error!("Unsupported platform");
 }
 
@@ -20,10 +27,11 @@ fn local_addr(port: u16) -> String {
     format!("0.0.0.0:{}", port)
 }
 
-fn bin_url() -> String {
+fn bin_url(version: &str) -> String {
     format!(
-        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/master/2c9375ee5ee307c2ce870c7dbd25eefd84fe8c36/near-sandbox.tar.gz",
+        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/master/{}/near-sandbox.tar.gz",
         platform(),
+        version,
     )
 }
 
@@ -50,27 +58,29 @@ pub fn bin_path() -> PathBuf {
     buf
 }
 
-pub fn install() -> anyhow::Result<PathBuf> {
+/// Install the sandbox node given the version, which is either a commit hash or tagged version
+/// number from the nearcore project. Note that commits pushed to master within the latest 12h
+/// will likely not have the binaries made available quite yet.
+pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
     // Download binary into temp dir
     let tmp_dir = format!("near-sandbox-{}", Utc::now());
     let dl_cache = Cache::at(&download_path());
-    let dl = dl_cache.download(
-        true,
-        &tmp_dir,
-        &["near-sandbox"],
-        &bin_url(),
-    )
-    .map_err(anyhow::Error::msg)?
-    .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
+    let dl = dl_cache
+        .download(true, &tmp_dir, &["near-sandbox"], &bin_url(version))
+        .map_err(anyhow::Error::msg)?
+        .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
 
-    let path = dl.binary("near-sandbox")
-        .map_err(anyhow::Error::msg)?;
+    let path = dl.binary("near-sandbox").map_err(anyhow::Error::msg)?;
 
     // Move near-sandbox binary to correct location from temp folder.
     let dest = download_path().join("near-sandbox");
     std::fs::rename(path, &dest)?;
 
     Ok(dest)
+}
+
+pub fn install() -> anyhow::Result<PathBuf> {
+    install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
 }
 
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
