@@ -79,6 +79,8 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
     Ok(dest)
 }
 
+/// Installs sandbox node with the default version. This is a version that is usually stable
+/// and has landed into mainnet to reflect the latest stable features and fixes.
 pub fn install() -> anyhow::Result<PathBuf> {
     install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
 }
