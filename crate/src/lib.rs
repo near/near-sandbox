@@ -96,7 +96,7 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     Ok(bin_path)
 }
 
-pub async fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
+pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = crate::ensure_sandbox_bin()?;
     Command::new(bin_path)
         .args(options)
@@ -105,11 +105,7 @@ pub async fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
         .map_err(Into::into)
 }
 
-pub async fn run(
-    home_dir: impl AsRef<Path>,
-    rpc_port: u16,
-    network_port: u16,
-) -> anyhow::Result<Child> {
+pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
     let home_dir = home_dir.as_ref().to_str().unwrap();
     run_with_options(&[
         "--home",
@@ -120,10 +116,9 @@ pub async fn run(
         "--network-addr",
         &local_addr(network_port),
     ])
-    .await
 }
 
-pub async fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
+pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(bin_path)
