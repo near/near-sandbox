@@ -7,7 +7,7 @@ use chrono::Utc;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
-const DEFAULT_SANDBOX_COMMIT_HASH: &str = "2c9375ee5ee307c2ce870c7dbd25eefd84fe8c36";
+const DEFAULT_SANDBOX_COMMIT_HASH: &str = "1.25.0/9b3d6ba551f561a028f0216051e031bc2ba0c6b7";
 
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -29,7 +29,7 @@ fn local_addr(port: u16) -> String {
 
 fn bin_url(version: &str) -> String {
     format!(
-        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/master/{}/near-sandbox.tar.gz",
+        "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/{}/near-sandbox.tar.gz",
         platform(),
         version,
     )
