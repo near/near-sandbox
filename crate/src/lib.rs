@@ -1,9 +1,10 @@
-use std::path::{Path, PathBuf};
-use std::process::{Child, Command};
-
 use anyhow::anyhow;
+use async_process::{Child, Command};
 use binary_install::Cache;
 use chrono::Utc;
+use std::path::{Path, PathBuf};
+
+pub mod sync;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
@@ -96,10 +97,10 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
 }
 
 pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
-    let bin_path = ensure_sandbox_bin()?;
+    let bin_path = crate::ensure_sandbox_bin()?;
     Command::new(bin_path)
         .args(options)
-        .envs(log_vars())
+        .envs(crate::log_vars())
         .spawn()
         .map_err(Into::into)
 }
