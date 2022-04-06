@@ -14,11 +14,11 @@ const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     return "Linux-x86_64";
 
-    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+    #[cfg(all(target_os = "macos"))]
     return "Darwin-x86_64";
 
     #[cfg(all(
-        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(all(target_os = "macos")),
         not(all(target_os = "linux", target_arch = "x86_64"))
     ))]
     compile_error!("Unsupported platform");
