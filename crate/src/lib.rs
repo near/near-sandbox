@@ -8,7 +8,7 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
-const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/57362268301554563c4f800af963a1270b3d5283";
+const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/97c0410de519ecaca369aaee26f0ca5eb9e7de06";
 
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
