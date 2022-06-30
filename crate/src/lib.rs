@@ -8,7 +8,20 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
-const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/97c0410de519ecaca369aaee26f0ca5eb9e7de06";
+const fn default_version() -> &'static str {
+    #[cfg(all(all(target_os = "linux", target_os = "macos"), target_arch = "x86_64"))]
+    return "master/97c0410de519ecaca369aaee26f0ca5eb9e7de06";
+
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    return "VLAD-test/c90ac67bc16ba9acbd43104eeb1ba73b6600cca9";
+
+    #[cfg(all(
+        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(all(target_os = "linux", target_arch = "x86_64")),
+        not(all(target_os = "macos", target_arch = "aarch64"))
+    ))]
+    compile_error!("Unsupported platform");
+}
 
 const fn platform() -> &'static str {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -17,9 +30,13 @@ const fn platform() -> &'static str {
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     return "Darwin-x86_64";
 
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    return "Darwin-arm64";
+
     #[cfg(all(
         not(all(target_os = "macos", target_arch = "x86_64")),
-        not(all(target_os = "linux", target_arch = "x86_64"))
+        not(all(target_os = "linux", target_arch = "x86_64")),
+        not(all(target_os = "macos", target_arch = "aarch64"))
     ))]
     compile_error!("Unsupported platform");
 }
@@ -83,7 +100,7 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
 /// Installs sandbox node with the default version. This is a version that is usually stable
 /// and has landed into mainnet to reflect the latest stable features and fixes.
 pub fn install() -> anyhow::Result<PathBuf> {
-    install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
+    install_with_version(default_version())
 }
 
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
