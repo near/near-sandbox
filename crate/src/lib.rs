@@ -47,16 +47,20 @@ fn download_path() -> PathBuf {
 }
 
 /// Returns a path to the binary in the form of {home}/.near/near-sandbox-{hash}/near-sandbox
-pub fn bin_path() -> PathBuf {
+pub fn bin_path() -> anyhow::Result<PathBuf> {
     if let Ok(path) = std::env::var("NEAR_SANDBOX_BIN_PATH") {
-        return PathBuf::from(path);
+        let path = PathBuf::from(path);
+        if !path.exists() {
+            anyhow::bail!("binary {} does not exist", path.display());
+        }
+        return Ok(path);
     }
 
     let mut buf = download_path();
     buf.push("near-sandbox");
     std::env::set_var("NEAR_SANDBOX_BIN_PATH", buf.as_os_str());
 
-    buf
+    Ok(buf)
 }
 
 /// Install the sandbox node given the version, which is either a commit hash or tagged version
@@ -92,7 +96,7 @@ pub fn install() -> anyhow::Result<PathBuf> {
 }
 
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
-    let mut bin_path = bin_path();
+    let mut bin_path = bin_path()?;
     if !bin_path.exists() {
         bin_path = install()?;
         println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
