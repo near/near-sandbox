@@ -8,7 +8,7 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
-const fn default_version() -> &'static str {
+pub const fn default_version() -> &'static str {
     #[cfg(all(all(target_os = "linux", target_os = "macos"), target_arch = "x86_64"))]
     return "master/97c0410de519ecaca369aaee26f0ca5eb9e7de06";
 
