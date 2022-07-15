@@ -17,8 +17,11 @@ const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     return Some("Darwin-x86_64");
 
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    return Some("Darwin-arm64");
+
     #[cfg(all(
-        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(target_os = "macos"),
         not(all(target_os = "linux", target_arch = "x86_64"))
     ))]
     return None;
