@@ -8,7 +8,7 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
-const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/97c0410de519ecaca369aaee26f0ca5eb9e7de06";
+const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/13a66dda709a4148f6395636914dca2a55df1390";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -17,8 +17,11 @@ const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     return Some("Darwin-x86_64");
 
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    return Some("Darwin-arm64");
+
     #[cfg(all(
-        not(all(target_os = "macos", target_arch = "x86_64")),
+        not(target_os = "macos"),
         not(all(target_os = "linux", target_arch = "x86_64"))
     ))]
     return None;

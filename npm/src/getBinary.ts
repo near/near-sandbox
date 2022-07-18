@@ -8,13 +8,16 @@ function getPlatform() {
 
   if ((type === "Linux" || type === "Darwin") && arch === "x64") {
     return [type, "x86_64"];
+  } else if (type === "Darwin" && arch === "arm64") {
+    return [type, "arm64"];
   }
+
   throw new Error(`Unsupported platform: ${type} ${arch}`);
 }
 
 export function AWSUrl(): string {
   const [platform, arch] = getPlatform();
-  return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/master/97c0410de519ecaca369aaee26f0ca5eb9e7de06/near-sandbox.tar.gz`;
+  return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/master/13a66dda709a4148f6395636914dca2a55df1390/near-sandbox.tar.gz`;
 }
 
 export function getBinary(name: string = "near-sandbox"): Promise<Binary> {
