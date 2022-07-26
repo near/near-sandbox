@@ -32,7 +32,7 @@ Coming soon
 
 ### From Source
 
-* Install [Rust with correct build target](https://docs.near.org/docs/tutorials/contracts/intro-to-rust#3-step-rust-installation)
+* Install [Rust with correct build target](https://docs.near.org/develop/prerequisites)
 
 * Clone [nearcore](https://github.com/near/nearcore)
 
