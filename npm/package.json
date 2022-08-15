@@ -1,6 +1,6 @@
 {
   "name": "near-sandbox",
-  "version": "0.0.11",
+  "version": "0.0.13",
   "description": "CLI tool for testing NEAR smart contracts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

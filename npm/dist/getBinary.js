@@ -16,7 +16,7 @@ function getPlatform() {
 }
 function AWSUrl() {
     const [platform, arch] = getPlatform();
-    return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/master/13a66dda709a4148f6395636914dca2a55df1390/near-sandbox.tar.gz`;
+    return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/master/dbb72eba04dcdda3fc97953af8be9870314e53dc/near-sandbox.tar.gz`;
 }
 exports.AWSUrl = AWSUrl;
 function getBinary(name = "near-sandbox") {
