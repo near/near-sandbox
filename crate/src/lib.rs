@@ -2,6 +2,9 @@ use anyhow::anyhow;
 use async_process::{Child, Command};
 use binary_install::Cache;
 use chrono::Utc;
+use fs2::FileExt;
+
+use std::fs::File;
 use std::path::{Path, PathBuf};
 
 pub mod sync;
@@ -40,8 +43,8 @@ fn bin_url(version: &str) -> Option<String> {
     ))
 }
 
-fn download_path() -> PathBuf {
-    if cfg!(features = "global_install") {
+pub fn download_path() -> PathBuf {
+    if cfg!(feature = "global_install") {
         let mut buf = home::home_dir().expect("could not retrieve home_dir");
         buf.push(".near");
         buf
@@ -62,7 +65,6 @@ pub fn bin_path() -> anyhow::Result<PathBuf> {
 
     let mut buf = download_path();
     buf.push("near-sandbox");
-    std::env::set_var("NEAR_SANDBOX_BIN_PATH", buf.as_os_str());
 
     Ok(buf)
 }
@@ -99,12 +101,33 @@ pub fn install() -> anyhow::Result<PathBuf> {
     install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
 }
 
+fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
+    // Sandbox bin already exists
+    if bin_path.exists() {
+        return Ok(None);
+    }
+
+    let mut lockpath = bin_path.clone();
+    lockpath.set_extension("lock");
+
+    // Acquire the lockfile
+    let lockfile = File::create(lockpath)?;
+    lockfile.lock_exclusive()?;
+
+    // Check again after acquiring if no one has written to the dest path
+    if bin_path.exists() {
+        Ok(None)
+    } else {
+        Ok(Some(lockfile))
+    }
+}
+
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     let mut bin_path = bin_path()?;
-    if !bin_path.exists() {
+    if let Some(lockfile) = installable(&bin_path)? {
         bin_path = install()?;
-        println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
+        lockfile.unlock()?;
     }
     Ok(bin_path)
 }
