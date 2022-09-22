@@ -43,7 +43,7 @@ fn bin_url(version: &str) -> Option<String> {
     ))
 }
 
-pub fn download_path() -> PathBuf {
+fn download_path() -> PathBuf {
     if cfg!(feature = "global_install") {
         let mut buf = home::home_dir().expect("could not retrieve home_dir");
         buf.push(".near");
@@ -126,6 +126,7 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     let mut bin_path = bin_path()?;
     if let Some(lockfile) = installable(&bin_path)? {
         bin_path = install()?;
+        println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
         lockfile.unlock()?;
     }
