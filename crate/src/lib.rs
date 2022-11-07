@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use async_process::{Child, Command};
 use binary_install::Cache;
 use chrono::Utc;
@@ -158,11 +158,11 @@ pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyh
 pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
-    Command::new(bin_path)
+    Command::new(&bin_path)
         .envs(log_vars())
         .args(&["--home", home_dir, "init"])
         .spawn()
-        .map_err(Into::into)
+        .with_context(|| format!("failed to spawn {}", bin_path.display()))
 }
 
 fn log_vars() -> Vec<(String, String)> {
