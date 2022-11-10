@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use async_process::{Child, Command};
 use binary_install::Cache;
 use chrono::Utc;
@@ -76,14 +76,12 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
     // Download binary into temp dir
     let tmp_dir = format!("near-sandbox-{}", Utc::now());
     let dl_cache = Cache::at(&download_path());
+    let bin_path = bin_url(version)
+        .ok_or_else(|| anyhow!("Unsupported platform: only linux-x86 and macos are supported"))?;
     let dl = dl_cache
-        .download(
-            true,
-            &tmp_dir,
-            &["near-sandbox"],
-            &bin_url(version).ok_or_else(|| anyhow::anyhow!("Unsupported platform"))?,
-        )
-        .map_err(anyhow::Error::msg)?
+        .download(true, &tmp_dir, &["near-sandbox"], &bin_path)
+        .map_err(anyhow::Error::msg)
+        .with_context(|| "unable to download near-sandbox")?
         .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
 
     let path = dl.binary("near-sandbox").map_err(anyhow::Error::msg)?;
@@ -135,11 +133,11 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
 
 pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = crate::ensure_sandbox_bin()?;
-    Command::new(bin_path)
+    Command::new(&bin_path)
         .args(options)
         .envs(crate::log_vars())
         .spawn()
-        .map_err(Into::into)
+        .with_context(|| format!("failed to run sandbox using '{}'", bin_path.display()))
 }
 
 pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
@@ -158,11 +156,11 @@ pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyh
 pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin()?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
-    Command::new(bin_path)
+    Command::new(&bin_path)
         .envs(log_vars())
         .args(&["--home", home_dir, "init"])
         .spawn()
-        .map_err(Into::into)
+        .with_context(|| format!("failed to init sandbox using '{}'", bin_path.display()))
 }
 
 fn log_vars() -> Vec<(String, String)> {
