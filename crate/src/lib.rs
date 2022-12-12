@@ -88,7 +88,12 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
 
     // Move near-sandbox binary to correct location from temp folder.
     let dest = download_path().join("near-sandbox");
-    std::fs::rename(path, &dest)?;
+    std::fs::rename(&path, &dest).with_context(|| {
+        format!(
+            "failed to move sandbox binary from {:?} to {:?}",
+            path, dest
+        )
+    })?;
 
     Ok(dest)
 }
@@ -96,6 +101,7 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
 /// Installs sandbox node with the default version. This is a version that is usually stable
 /// and has landed into mainnet to reflect the latest stable features and fixes.
 pub fn install() -> anyhow::Result<PathBuf> {
+    println!("INSTALLING SANDBOX NODE");
     install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
 }
 
@@ -109,8 +115,14 @@ fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
     lockpath.set_extension("lock");
 
     // Acquire the lockfile
-    let lockfile = File::create(lockpath)?;
-    lockfile.lock_exclusive()?;
+    let lockfile = File::create(lockpath)
+        .with_context(|| format!("failed to create lockfile for '{:?}'", bin_path.display()))?;
+    lockfile.lock_exclusive().with_context(|| {
+        format!(
+            "failed to lock exclusively for install path '{:?}'",
+            bin_path.display()
+        )
+    })?;
 
     // Check again after acquiring if no one has written to the dest path
     if bin_path.exists() {
@@ -126,7 +138,9 @@ pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
         bin_path = install()?;
         println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
-        lockfile.unlock()?;
+        lockfile
+            .unlock()
+            .with_context(|| format!("failed to unlock lockfile for '{:?}'", bin_path.display()))?;
     }
     Ok(bin_path)
 }
