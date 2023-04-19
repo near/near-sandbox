@@ -11,8 +11,8 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to. This can be updated from
 // time to time, but probably should be close to when a release is made.
-// Currently pointing to nearcore on Oct 5, 2022
-const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/e7ff91329e9a7cb6e38b6409dfa2d0bc9c058f6f";
+// Currently pointing to nearcore on Apr 3, 2023
+const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/d08187094a82b3bfab3b8b0fa076e71068f39cb7";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
