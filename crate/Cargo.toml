@@ -10,7 +10,7 @@ Utility library for launching NEAR sandbox environments.
 
 [dependencies]
 anyhow = "1"
-async-process = "1.7.0"
+async-process = "1"
 binary-install = "0.2.0"
 chrono = "0.4"
 fs2 = "0.4"
