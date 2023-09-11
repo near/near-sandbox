@@ -5,6 +5,7 @@ use chrono::Utc;
 use fs2::FileExt;
 
 use std::fs::File;
+
 use std::path::{Path, PathBuf};
 
 pub mod sync;
@@ -13,6 +14,8 @@ pub mod sync;
 // time to time, but probably should be close to when a release is made.
 // Currently pointing to nearcore on Apr 3, 2023
 const DEFAULT_SANDBOX_COMMIT_HASH: &str = "master/d08187094a82b3bfab3b8b0fa076e71068f39cb7";
+
+const SANDBOX_VERSION_FILE: &str = "SANDBOX_VERSION";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -73,6 +76,11 @@ pub fn bin_path() -> anyhow::Result<PathBuf> {
 /// number from the nearcore project. Note that commits pushed to master within the latest 12h
 /// will likely not have the binaries made available quite yet.
 pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
+    let tmp_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/tmp");
+    std::fs::create_dir_all(&tmp_dir)?;
+    let version_file_path = tmp_dir.join(SANDBOX_VERSION_FILE);
+    std::fs::write(version_file_path, version.as_bytes())?;
+
     // Download binary into temp dir
     let tmp_dir = format!("near-sandbox-{}", Utc::now());
     let dl_cache = Cache::at(&download_path());
@@ -99,13 +107,13 @@ pub fn install() -> anyhow::Result<PathBuf> {
     install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
 }
 
-fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
+fn installable(bin_path: &Path) -> anyhow::Result<Option<std::fs::File>> {
     // Sandbox bin already exists
     if bin_path.exists() {
         return Ok(None);
     }
 
-    let mut lockpath = bin_path.clone();
+    let mut lockpath = bin_path.to_path_buf();
     lockpath.set_extension("lock");
 
     // Acquire the lockfile
@@ -123,14 +131,19 @@ fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
     let mut bin_path = bin_path()?;
     if let Some(lockfile) = installable(&bin_path)? {
-        bin_path = install()?;
-        println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
+        let sandbox_version_file = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("target/tmp/{}", SANDBOX_VERSION_FILE));
+
+        let version = std::fs::read_to_string(sandbox_version_file)?;
+
+        bin_path = install_with_version(&version)?;
+
+        println!("Installed near-sandbox into {}", bin_path.display());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
         lockfile.unlock()?;
     }
     Ok(bin_path)
 }
-
 pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
     let bin_path = crate::ensure_sandbox_bin()?;
     Command::new(&bin_path)
@@ -158,7 +171,7 @@ pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(&bin_path)
         .envs(log_vars())
-        .args(&["--home", home_dir, "init"])
+        .args(["--home", home_dir, "init"])
         .spawn()
         .with_context(|| format!("failed to init sandbox using '{}'", bin_path.display()))
 }
