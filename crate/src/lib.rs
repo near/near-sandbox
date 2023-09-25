@@ -192,7 +192,7 @@ pub fn init_with_version(home_dir: impl AsRef<Path>, version: &str) -> anyhow::R
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(&bin_path)
         .envs(log_vars())
-        .args(&["--home", home_dir, "init"])
+        .args(&["--home", home_dir, "init", "--fast"])
         .spawn()
         .with_context(|| format!("failed to init sandbox using '{}'", bin_path.display()))
 }
