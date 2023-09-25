@@ -121,14 +121,7 @@ fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
 }
 
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
-    let mut bin_path = bin_path()?;
-    if let Some(lockfile) = installable(&bin_path)? {
-        bin_path = install()?;
-        println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
-        std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
-        lockfile.unlock()?;
-    }
-    Ok(bin_path)
+    ensure_sandbox_bin_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
 }
 
 pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
@@ -141,20 +134,61 @@ pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
 }
 
 pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
-    let home_dir = home_dir.as_ref().to_str().unwrap();
-    run_with_options(&[
-        "--home",
+    run_with_version(
         home_dir,
-        "run",
-        "--rpc-addr",
-        &local_addr(rpc_port),
-        "--network-addr",
-        &local_addr(network_port),
-    ])
+        rpc_port,
+        network_port,
+        DEFAULT_SANDBOX_COMMIT_HASH,
+    )
 }
 
 pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
-    let bin_path = ensure_sandbox_bin()?;
+    init_with_version(home_dir, DEFAULT_SANDBOX_COMMIT_HASH)
+}
+
+pub fn ensure_sandbox_bin_with_version(version: &str) -> anyhow::Result<PathBuf> {
+    let mut bin_path = bin_path()?;
+    if let Some(lockfile) = installable(&bin_path)? {
+        bin_path = install_with_version(version)?;
+        println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
+        std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
+        lockfile.unlock()?;
+    }
+    Ok(bin_path)
+}
+
+pub fn run_with_options_with_version(options: &[&str], version: &str) -> anyhow::Result<Child> {
+    let bin_path = crate::ensure_sandbox_bin_with_version(version)?;
+    Command::new(&bin_path)
+        .args(options)
+        .envs(crate::log_vars())
+        .spawn()
+        .with_context(|| format!("failed to run sandbox using '{}'", bin_path.display()))
+}
+
+pub fn run_with_version(
+    home_dir: impl AsRef<Path>,
+    rpc_port: u16,
+    network_port: u16,
+    version: &str,
+) -> anyhow::Result<Child> {
+    let home_dir = home_dir.as_ref().to_str().unwrap();
+    run_with_options_with_version(
+        &[
+            "--home",
+            home_dir,
+            "run",
+            "--rpc-addr",
+            &local_addr(rpc_port),
+            "--network-addr",
+            &local_addr(network_port),
+        ],
+        version,
+    )
+}
+
+pub fn init_with_version(home_dir: impl AsRef<Path>, version: &str) -> anyhow::Result<Child> {
+    let bin_path = ensure_sandbox_bin_with_version(version)?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(&bin_path)
         .envs(log_vars())
