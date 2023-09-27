@@ -12,7 +12,7 @@ pub mod sync;
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.
 // Currently pointing to nearcore@v1.35.0 released on Jul 25, 2023
-const DEFAULT_SANDBOX_COMMIT_HASH: &str = "1.35.0/1e781bcccfaeb9a4bb9531155193a459257afd8d";
+pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "1.35.0/1e781bcccfaeb9a4bb9531155193a459257afd8d";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -96,7 +96,7 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
 /// Installs sandbox node with the default version. This is a version that is usually stable
 /// and has landed into mainnet to reflect the latest stable features and fixes.
 pub fn install() -> anyhow::Result<PathBuf> {
-    install_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
+    install_with_version(DEFAULT_NEAR_SANDBOX_VERSION)
 }
 
 fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
@@ -121,7 +121,7 @@ fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
 }
 
 pub fn ensure_sandbox_bin() -> anyhow::Result<PathBuf> {
-    ensure_sandbox_bin_with_version(DEFAULT_SANDBOX_COMMIT_HASH)
+    ensure_sandbox_bin_with_version(DEFAULT_NEAR_SANDBOX_VERSION)
 }
 
 pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
@@ -138,12 +138,12 @@ pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyh
         home_dir,
         rpc_port,
         network_port,
-        DEFAULT_SANDBOX_COMMIT_HASH,
+        DEFAULT_NEAR_SANDBOX_VERSION,
     )
 }
 
 pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
-    init_with_version(home_dir, DEFAULT_SANDBOX_COMMIT_HASH)
+    init_with_version(home_dir, DEFAULT_NEAR_SANDBOX_VERSION)
 }
 
 pub fn ensure_sandbox_bin_with_version(version: &str) -> anyhow::Result<PathBuf> {
