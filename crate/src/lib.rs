@@ -99,13 +99,13 @@ pub fn install() -> anyhow::Result<PathBuf> {
     install_with_version(DEFAULT_NEAR_SANDBOX_VERSION)
 }
 
-fn installable(bin_path: &PathBuf) -> anyhow::Result<Option<std::fs::File>> {
+fn installable(bin_path: &Path) -> anyhow::Result<Option<std::fs::File>> {
     // Sandbox bin already exists
     if bin_path.exists() {
         return Ok(None);
     }
 
-    let mut lockpath = bin_path.clone();
+    let mut lockpath = bin_path.to_path_buf();
     lockpath.set_extension("lock");
 
     // Acquire the lockfile
@@ -192,7 +192,7 @@ pub fn init_with_version(home_dir: impl AsRef<Path>, version: &str) -> anyhow::R
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(&bin_path)
         .envs(log_vars())
-        .args(&["--home", home_dir, "init", "--fast"])
+        .args(["--home", home_dir, "init", "--fast"])
         .spawn()
         .with_context(|| format!("failed to init sandbox using '{}'", bin_path.display()))
 }
