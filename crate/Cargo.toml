@@ -10,7 +10,8 @@ Utility library for launching NEAR sandbox environments.
 
 [dependencies]
 anyhow = "1"
-async-process = "1"
+# The version is pinned to <=1.7.0 because of the following issue: https://github.com/smol-rs/async-process/issues/55
+async-process = "<=1.7.0"
 binary-install = "0.2.0"
 chrono = "0.4"
 fs2 = "0.4"
