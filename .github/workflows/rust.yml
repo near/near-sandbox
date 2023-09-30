@@ -61,8 +61,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Run release-plz
         uses: MarcoIeni/release-plz-action@v0.5
-        with:
-          project_manifest: ./crate/Cargo.toml
         env:
           # https://release-plz.ieni.dev/docs/github/trigger
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
