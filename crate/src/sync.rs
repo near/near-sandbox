@@ -28,7 +28,7 @@ pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
     let home_dir = home_dir.as_ref().to_str().unwrap();
     Command::new(bin_path)
         .envs(crate::log_vars())
-        .args(&["--home", home_dir, "init"])
+        .args(["--home", home_dir, "init"])
         .spawn()
         .map_err(Into::into)
 }
