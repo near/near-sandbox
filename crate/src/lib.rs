@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Context};
-use async_process::{Child, Command};
 use binary_install::Cache;
 use chrono::Utc;
 use fs2::FileExt;
+use tokio::process::{Child, Command};
 
 use std::fs::File;
 use std::path::{Path, PathBuf};
