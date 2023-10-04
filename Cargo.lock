@@ -482,13 +482,12 @@ dependencies = [
 
 [[package]]
 name = "near-sandbox-utils"
-version = "0.6.3"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "binary-install",
  "chrono",
  "fs2",
- "hex",
  "home",
  "tokio",
 ]

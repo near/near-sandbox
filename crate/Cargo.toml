@@ -1,6 +1,6 @@
 [package]
 name = "near-sandbox-utils"
-version = "0.6.3"
+version = "0.7.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/near/sandbox"
@@ -14,7 +14,6 @@ tokio = { version = "1", features = ["process"] }
 binary-install = "0.2.0"
 chrono = "0.4"
 fs2 = "0.4"
-hex = "0.4"
 home = "0.5.5"
 
 [features]
