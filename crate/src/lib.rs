@@ -238,21 +238,11 @@ fn check_for_version(version: &str) -> anyhow::Result<Option<PathBuf>> {
         return Ok(Some(PathBuf::from(bin_path)));
     }
 
-    //  {home}/.near/near-sandbox-{version}
-    let out_dir = download_path(version);
+    // version saved under {home}/.near/near-sandbox-{version}/near-sandbox
+    let out_dir = download_path(version).join("near-sandbox");
     if !out_dir.exists() {
         return Ok(None);
     }
 
-    for entry in out_dir
-        .read_dir()
-        .expect("the download path should be readable")
-    {
-        let entry = &entry?;
-        if entry.file_name().to_str().unwrap().eq("near-sandbox") {
-            return Ok(Some(entry.path()));
-        }
-    }
-
-    Ok(None)
+    Ok(Some(out_dir))
 }
