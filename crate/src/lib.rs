@@ -35,7 +35,12 @@ fn local_addr(port: u16) -> String {
     format!("0.0.0.0:{}", port)
 }
 
+// if the `SANDBOX_ARTIFACT_URL` env var is set, we short-circuit and use that.
 fn bin_url(version: &str) -> Option<String> {
+    if let Ok(val) = std::env::var("SANDBOX_ARTIFACT_URL") {
+        return Some(val);
+    }
+
     Some(format!(
         "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/{}/near-sandbox.tar.gz",
         platform()?,
