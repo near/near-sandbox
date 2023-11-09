@@ -1,0 +1,37 @@
+name: Docker Image
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build and Push
+    permissions:
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          tags: ghcr.io/near/sandbox:${{ github.sha }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Push Docker image
+        run: docker push ghcr.io/near/sandbox:${{ github.sha }}
+
+      - name: Push latest Docker image
+        run: docker tag ghcr.io/near/sandbox:${{ github.sha }} ghcr.io/near/sandbox:latest && docker push ghcr.io/near/sandbox:latest
