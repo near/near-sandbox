@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Context};
 use binary_install::Cache;
 use fs2::FileExt;
-use regex::Regex;
 use tokio::process::{Child, Command};
 
 use std::fs::File;
@@ -76,10 +75,8 @@ pub fn bin_path(version: &str) -> anyhow::Result<PathBuf> {
     Ok(buf)
 }
 
-pub fn normalize_name<S: AsRef<str>>(input: S) -> String {
-    // replace occurrences of '/' with '_'
-    let re = Regex::new(r"/").unwrap();
-    re.replace_all(input.as_ref(), "_").to_string()
+fn normalize_name(input: &str) -> String {
+    input.replace('/', "_")
 }
 
 /// Install the sandbox node given the version, which is either a commit hash or tagged version
@@ -105,7 +102,7 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
 
     // Move near-sandbox binary to correct location from temp folder.
     let dest = download_path(version).join("near-sandbox");
-    std::fs::rename(path.clone(), &dest)?;
+    std::fs::rename(path, &dest)?;
 
     Ok(dest)
 }
