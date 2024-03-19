@@ -17,7 +17,7 @@ function getPlatform() {
 
 export function AWSUrl(): string {
   const [platform, arch] = getPlatform();
-  return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/1.37.3/b341e778154917aa7ab19f79c8d59a794ead320a/near-sandbox.tar.gz`;
+  return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/1.38.0/aac5e42fe8975e27faca53e31f53f9c67a5b4e35/near-sandbox.tar.gz`;
 }
 
 export function getBinary(name: string = "near-sandbox"): Promise<Binary> {
