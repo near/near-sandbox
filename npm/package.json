@@ -14,7 +14,7 @@
   "private": false,
   "dependencies": {
     "got": "^11.8.6",
-    "tar": "^6.1.0"
+    "tar": "^6.2.0"
   },
   "devDependencies": {
     "@sindresorhus/tsconfig": "^2.0.0",
