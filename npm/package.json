@@ -17,6 +17,10 @@
     "tar": "^6.2.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "0.4.6",
+    "@changesets/cli": "2.24.4",
+    "@commitlint/cli": "17.0.3",
+    "@commitlint/config-conventional": "17.0.3",
     "@sindresorhus/tsconfig": "^2.0.0",
     "@types/node": "^16.4.10",
     "@types/tar": "^4.0.5",
@@ -28,7 +32,8 @@
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js",
     "test": "ava",
-    "build": "tsc"
+    "build": "tsc",
+    "release": "changeset publish"
   },
   "files": [
     "*.js",
