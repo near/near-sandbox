@@ -32,13 +32,13 @@ jobs:
         run: npm install
 
       - name: Build Packages
-        run: npm build
+        run: npm run build
 
       - name: Create Release Pull Request or Publish to NPM
         # use changesets/action to create PR and auto release
         uses: changesets/action@v1
         with:
-          publish: npm release
+          publish: npm run release
           commit: "chore(release): publish packages"
           title: "Publish packages"
           createGithubReleases: true
