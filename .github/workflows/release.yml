@@ -11,9 +11,6 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./npm
     permissions:
       contents: write
       issues: write
@@ -29,16 +26,16 @@ jobs:
           node-version: 16.x
 
       - name: Install Dependencies
-        run: npm install
+        run: cd ./npm && npm install
 
       - name: Build Packages
-        run: npm run build
+        run: cd ./npm && npm run build
 
       - name: Create Release Pull Request or Publish to NPM
         # use changesets/action to create PR and auto release
         uses: changesets/action@v1
         with:
-          publish: npm run release
+          publish:  cd ./npm && npm run release
           commit: "chore(release): publish packages"
           title: "Publish packages"
           createGithubReleases: true
