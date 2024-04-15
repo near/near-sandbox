@@ -39,6 +39,7 @@ jobs:
         uses: changesets/action@v1
         with:
           publish: npm run release
+          cwd: "./npm"
           commit: "chore(release): publish packages"
           title: "Publish packages"
           createGithubReleases: true
