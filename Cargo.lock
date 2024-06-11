@@ -482,7 +482,7 @@ dependencies = [
 
 [[package]]
 name = "near-sandbox-utils"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "anyhow",
  "binary-install",
