@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Context};
 use binary_install::Cache;
-use chrono::Utc;
 use fs2::FileExt;
 use tokio::process::{Child, Command};
 
@@ -48,18 +47,25 @@ fn bin_url(version: &str) -> Option<String> {
     ))
 }
 
-fn download_path() -> PathBuf {
-    if cfg!(feature = "global_install") {
-        let mut buf = home::home_dir().expect("could not retrieve home_dir");
-        buf.push(".near");
-        buf
+// Returns a path to the binary in the form of: `{home}/.near/near-sandbox-{version}` || `{$OUT_DIR}/.near/near-sandbox-{version}`
+fn download_path(version: &str) -> PathBuf {
+    let mut out = if cfg!(feature = "global_install") {
+        home::home_dir().expect("could not retrieve home_dir")
     } else {
         PathBuf::from(env!("OUT_DIR"))
+    };
+
+    out.push(".near");
+    out.push(format!("near-sandbox-{}", normalize_name(version)));
+    if !out.exists() {
+        std::fs::create_dir_all(&out).expect("could not create download path");
     }
+
+    out
 }
 
-/// Returns a path to the binary in the form of {home}/.near/near-sandbox-{hash}/near-sandbox
-pub fn bin_path() -> anyhow::Result<PathBuf> {
+/// Returns a path to the binary in the form of {home}/.near/near-sandbox-{version}/near-sandbox
+pub fn bin_path(version: &str) -> anyhow::Result<PathBuf> {
     if let Ok(path) = std::env::var("NEAR_SANDBOX_BIN_PATH") {
         let path = PathBuf::from(path);
         if !path.exists() {
@@ -68,23 +74,31 @@ pub fn bin_path() -> anyhow::Result<PathBuf> {
         return Ok(path);
     }
 
-    let mut buf = download_path();
+    let mut buf = download_path(version);
     buf.push("near-sandbox");
 
     Ok(buf)
+}
+
+fn normalize_name(input: &str) -> String {
+    input.replace('/', "_")
 }
 
 /// Install the sandbox node given the version, which is either a commit hash or tagged version
 /// number from the nearcore project. Note that commits pushed to master within the latest 12h
 /// will likely not have the binaries made available quite yet.
 pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
+    if let Some(bin_path) = check_for_version(version)? {
+        return Ok(bin_path);
+    }
+
     // Download binary into temp dir
-    let tmp_dir = format!("near-sandbox-{}", Utc::now());
-    let dl_cache = Cache::at(&download_path());
+    let bin_name = format!("near-sandbox-{}", normalize_name(version));
+    let dl_cache = Cache::at(&download_path(version));
     let bin_path = bin_url(version)
         .ok_or_else(|| anyhow!("Unsupported platform: only linux-x86 and macos are supported"))?;
     let dl = dl_cache
-        .download(true, &tmp_dir, &["near-sandbox"], &bin_path)
+        .download(true, &bin_name, &["near-sandbox"], &bin_path)
         .map_err(anyhow::Error::msg)
         .with_context(|| "unable to download near-sandbox")?
         .ok_or_else(|| anyhow!("Could not install near-sandbox"))?;
@@ -92,7 +106,7 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
     let path = dl.binary("near-sandbox").map_err(anyhow::Error::msg)?;
 
     // Move near-sandbox binary to correct location from temp folder.
-    let dest = download_path().join("near-sandbox");
+    let dest = download_path(version).join("near-sandbox");
     std::fs::rename(path, &dest)?;
 
     Ok(dest)
@@ -101,7 +115,7 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
 /// Installs sandbox node with the default version. This is a version that is usually stable
 /// and has landed into mainnet to reflect the latest stable features and fixes.
 pub fn install() -> anyhow::Result<PathBuf> {
-    install_with_version(DEFAULT_NEAR_SANDBOX_VERSION)
+    ensure_sandbox_bin_with_version(DEFAULT_NEAR_SANDBOX_VERSION)
 }
 
 fn installable(bin_path: &Path) -> anyhow::Result<Option<std::fs::File>> {
@@ -139,6 +153,7 @@ pub fn run_with_options(options: &[&str]) -> anyhow::Result<Child> {
 }
 
 pub fn run(home_dir: impl AsRef<Path>, rpc_port: u16, network_port: u16) -> anyhow::Result<Child> {
+    #[allow(deprecated)]
     run_with_version(
         home_dir,
         rpc_port,
@@ -152,18 +167,19 @@ pub fn init(home_dir: impl AsRef<Path>) -> anyhow::Result<Child> {
 }
 
 pub fn ensure_sandbox_bin_with_version(version: &str) -> anyhow::Result<PathBuf> {
-    let mut bin_path = bin_path()?;
+    let mut bin_path = bin_path(version)?;
     if let Some(lockfile) = installable(&bin_path)? {
         bin_path = install_with_version(version)?;
         println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
         lockfile.unlock()?;
     }
+
     Ok(bin_path)
 }
 
 pub fn run_with_options_with_version(options: &[&str], version: &str) -> anyhow::Result<Child> {
-    let bin_path = crate::ensure_sandbox_bin_with_version(version)?;
+    let bin_path = ensure_sandbox_bin_with_version(version)?;
     Command::new(&bin_path)
         .args(options)
         .envs(crate::log_vars())
@@ -178,6 +194,7 @@ pub fn run_with_version(
     version: &str,
 ) -> anyhow::Result<Child> {
     let home_dir = home_dir.as_ref().to_str().unwrap();
+
     run_with_options_with_version(
         &[
             "--home",
@@ -192,6 +209,7 @@ pub fn run_with_version(
     )
 }
 
+/// Initialize a sandbox node with the provided version and home directory.
 pub fn init_with_version(home_dir: impl AsRef<Path>, version: &str) -> anyhow::Result<Child> {
     let bin_path = ensure_sandbox_bin_with_version(version)?;
     let home_dir = home_dir.as_ref().to_str().unwrap();
@@ -211,4 +229,22 @@ fn log_vars() -> Vec<(String, String)> {
         vars.push(("RUST_LOG_STYLE".into(), val));
     }
     vars
+}
+
+/// Check if the sandbox version is already downloaded to the bin path.
+/// It does not disambiguate between a commit hash and a tagged version, so it's recommeded to
+/// pick one format and stick to it.
+fn check_for_version(version: &str) -> anyhow::Result<Option<PathBuf>> {
+    // short circuit if we are using the sandbox binary from the environment
+    if let Ok(bin_path) = &std::env::var("NEAR_SANDBOX_BIN_PATH") {
+        return Ok(Some(PathBuf::from(bin_path)));
+    }
+
+    // version saved under {home}/.near/near-sandbox-{version}/near-sandbox
+    let out_dir = download_path(version).join("near-sandbox");
+    if !out_dir.exists() {
+        return Ok(None);
+    }
+
+    Ok(Some(out_dir))
 }

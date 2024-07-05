@@ -12,7 +12,6 @@ Utility library for launching NEAR sandbox environments.
 anyhow = "1"
 tokio = { version = "1", features = ["process"] }
 binary-install = "0.2.0"
-chrono = "0.4"
 fs2 = "0.4"
 home = "0.5.5"
 
