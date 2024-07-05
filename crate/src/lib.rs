@@ -11,8 +11,8 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.
-// Currently pointing to nearcore@v1.39.2 released on May 22, 2024
-pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "1.39.2/a0f74bb99341a11d0978c3cf85ef428ee935fdbd";
+// Currently pointing to nearcore@v1.40.0 released on June 17, 2024
+pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "1.40.0/7dd0b5993577f592be15eb102e5a3da37be66271";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
