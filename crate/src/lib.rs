@@ -10,8 +10,8 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.
-// Currently pointing to nearcore@v1.35.0 released on Jul 25, 2023
-pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "1.35.0/1e781bcccfaeb9a4bb9531155193a459257afd8d";
+// Currently pointing to nearcore@v1.40.0 released on June 17, 2024
+pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "1.40.0/7dd0b5993577f592be15eb102e5a3da37be66271";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -34,7 +34,12 @@ fn local_addr(port: u16) -> String {
     format!("0.0.0.0:{}", port)
 }
 
+// if the `SANDBOX_ARTIFACT_URL` env var is set, we short-circuit and use that.
 fn bin_url(version: &str) -> Option<String> {
+    if let Ok(val) = std::env::var("SANDBOX_ARTIFACT_URL") {
+        return Some(val);
+    }
+
     Some(format!(
         "https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/{}/{}/near-sandbox.tar.gz",
         platform()?,

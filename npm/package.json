@@ -1,6 +1,6 @@
 {
   "name": "near-sandbox",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "CLI tool for testing NEAR smart contracts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,10 +13,14 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "got": "^11.8.2",
-    "tar": "^6.1.0"
+    "got": "^11.8.6",
+    "tar": "^6.2.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "0.4.6",
+    "@changesets/cli": "2.24.4",
+    "@commitlint/cli": "17.0.3",
+    "@commitlint/config-conventional": "17.0.3",
     "@sindresorhus/tsconfig": "^2.0.0",
     "@types/node": "^16.4.10",
     "@types/tar": "^4.0.5",
@@ -28,7 +32,8 @@
     "postinstall": "node ./install.js",
     "preinstall": "node ./uninstall.js",
     "test": "ava",
-    "build": "tsc"
+    "build": "tsc",
+    "release": "changeset publish"
   },
   "files": [
     "*.js",
