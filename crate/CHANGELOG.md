@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0](https://github.com/near/near-sandbox/compare/v0.8.0...v0.9.0) - 2024-07-05
+
+### Added
+- Avoid different versions of near-sandbox binaries collision ([#72](https://github.com/near/near-sandbox/pull/72))
+
+### Other
+- Updated the default neard version to 1.40.0 ([#85](https://github.com/near/near-sandbox/pull/85))
+
 ## [0.8.0](https://github.com/near/near-sandbox/compare/v0.7.0...v0.8.0) - 2024-06-11
 
 ### Added
