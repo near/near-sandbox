@@ -33,6 +33,7 @@
     "preinstall": "node ./uninstall.js",
     "test": "ava",
     "build": "tsc",
+    "changeset": "changeset",
     "release": "changeset publish"
   },
   "files": [
