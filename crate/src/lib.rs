@@ -10,15 +10,16 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.
-// Currently pointing to nearcore@v1.40.0 released on June 17, 2024
-pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "1.40.0/7dd0b5993577f592be15eb102e5a3da37be66271";
+// Currently pointing to nearcore@v2.0.0 released on August 5, 2024
+pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "2.0.0";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     return Some("Linux-x86_64");
 
+    // Darwin-x86_64 is not supported for some time now.
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-    return Some("Darwin-x86_64");
+    return None;
 
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     return Some("Darwin-arm64");
@@ -95,8 +96,9 @@ pub fn install_with_version(version: &str) -> anyhow::Result<PathBuf> {
     // Download binary into temp dir
     let bin_name = format!("near-sandbox-{}", normalize_name(version));
     let dl_cache = Cache::at(&download_path(version));
-    let bin_path = bin_url(version)
-        .ok_or_else(|| anyhow!("Unsupported platform: only linux-x86 and macos are supported"))?;
+    let bin_path = bin_url(version).ok_or_else(|| {
+        anyhow!("Unsupported platform: only linux-x86 and darwin-arm are supported")
+    })?;
     let dl = dl_cache
         .download(true, &bin_name, &["near-sandbox"], &bin_path)
         .map_err(anyhow::Error::msg)
