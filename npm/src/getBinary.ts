@@ -6,7 +6,8 @@ function getPlatform() {
   const type = os.type();
   const arch = os.arch();
 
-  if ((type === "Linux" || type === "Darwin") && arch === "x64") {
+  // Darwind x86_64 is not supported for quite some time :(
+  if (type === "Linux" && arch === "x64") {
     return [type, "x86_64"];
   } else if (type === "Darwin" && arch === "arm64") {
     return [type, "arm64"];
@@ -17,7 +18,7 @@ function getPlatform() {
 
 export function AWSUrl(): string {
   const [platform, arch] = getPlatform();
-  return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/2.0.0/1e199ded60b51fa8d4f1001491a0c39c92393ff0/near-sandbox.tar.gz`;
+  return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/2.0.0/sandbox.tar.gz`;
 }
 
 export function getBinary(name: string = "near-sandbox"): Promise<Binary> {
