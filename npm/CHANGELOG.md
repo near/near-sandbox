@@ -1,5 +1,11 @@
 # near-sandbox
 
+## 0.0.21
+
+### Patch Changes
+
+- 7400f6f: Updated near-sandbox to 2.1.1
+
 ## 0.0.20
 
 ### Patch Changes
