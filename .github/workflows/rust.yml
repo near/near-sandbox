@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Run cargo fmt
-      run: cargo yank 0.10.1 near-sandbox-utils --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      run: cargo yank near-sandbox-utils@0.10.1 --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   # there're sometimes warnings, which signal, that the generated doc
   # won't look as expected, when rendered, and sometimes errors, which will prevent doc from being
