@@ -7,7 +7,8 @@ const os = require("os");
 function getPlatform() {
     const type = os.type();
     const arch = os.arch();
-    if ((type === "Linux" || type === "Darwin") && arch === "x64") {
+    // Darwind x86_64 is not supported for quite some time :(
+    if (type === "Linux" && arch === "x64") {
         return [type, "x86_64"];
     }
     else if (type === "Darwin" && arch === "arm64") {
@@ -17,7 +18,7 @@ function getPlatform() {
 }
 function AWSUrl() {
     const [platform, arch] = getPlatform();
-    return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/1.40.0/7dd0b5993577f592be15eb102e5a3da37be66271/near-sandbox.tar.gz`;
+    return `https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/${platform}-${arch}/2.1.1/near-sandbox.tar.gz`;
 }
 exports.AWSUrl = AWSUrl;
 function getBinary(name = "near-sandbox") {
