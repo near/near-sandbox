@@ -1,5 +1,11 @@
 # near-sandbox
 
+## 0.1.0
+
+### Minor Changes
+
+- 0e5c372: Ensure installation directory exists before downloading binary
+
 ## 0.0.21
 
 ### Patch Changes
