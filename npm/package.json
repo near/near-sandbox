@@ -38,6 +38,7 @@
   },
   "files": [
     "*.js",
+    "bin",
     "dist/*.ts",
     "dist/*.js"
   ]

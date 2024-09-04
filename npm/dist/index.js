@@ -74,7 +74,11 @@ class Binary {
     get binPath() {
         return (0, path_1.join)(this.installDir, this.name);
     }
-    download(url) {
+    async download(url) {
+        // Ensure the install directory exists
+        if (!await (0, utils_1.fileExists)(this.installDir)) {
+            await fs.mkdir(this.installDir, { recursive: true });
+        }
         return pipeline(got_1.default.stream(url), new stream.PassThrough(), tar.x({ strip: 1, C: this.installDir }));
     }
     async install() {

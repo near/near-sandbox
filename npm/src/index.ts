@@ -72,7 +72,12 @@ export class Binary {
     return join(this.installDir, this.name);
   }
 
-  download(url: URL): Promise<void> {
+  async download(url: URL): Promise<void> {
+    // Ensure the install directory exists
+    if (!await fileExists(this.installDir)) {
+      await fs.mkdir(this.installDir, { recursive: true });
+    }
+
     return pipeline(
       got.stream(url),
       new stream.PassThrough(),
