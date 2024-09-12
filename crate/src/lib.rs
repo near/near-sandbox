@@ -12,7 +12,7 @@ pub mod sync;
 // Should be updated to the latest release of nearcore.
 // Currently pointing to nearcore@v2.2.0 released on September 9, 2024
 pub const DEFAULT_NEAR_SANDBOX_VERSION: &str =
-    "master/52b4684c1c8f4a5e18a9439c7a9cef969ebd116c/stable";
+    "master/9a72275a585ad197f4b296c236b27fa3ce71354e/stable";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
