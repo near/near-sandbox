@@ -1,5 +1,11 @@
 # near-sandbox
 
+## 0.1.2
+
+### Patch Changes
+
+- 43bce75: Updated near-sandbox version to 2.3.1 version
+
 ## 0.1.1
 
 ### Patch Changes
