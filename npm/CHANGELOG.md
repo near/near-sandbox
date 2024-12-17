@@ -1,5 +1,11 @@
 # near-sandbox
 
+## 0.1.3
+
+### Patch Changes
+
+- 04aa5ca: Updated near-sandbox version to 2.4.0 version
+
 ## 0.1.2
 
 ### Patch Changes
