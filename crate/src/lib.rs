@@ -174,7 +174,7 @@ pub fn ensure_sandbox_bin_with_version(version: &str) -> anyhow::Result<PathBuf>
         bin_path = install_with_version(version)?;
         println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
-        lockfile.unlock()?;
+        fs2::FileExt::unlock(&lockfile)?;
     }
 
     Ok(bin_path)
