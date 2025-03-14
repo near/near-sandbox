@@ -10,8 +10,8 @@ pub mod sync;
 
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.
-// Currently pointing to nearcore@v2.4.0 released on December 11, 2024
-pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "2.4.0";
+// Currently pointing to nearcore@v2.5.1 released on March 6, 2025
+pub const DEFAULT_NEAR_SANDBOX_VERSION: &str = "2.5.1";
 
 const fn platform() -> Option<&'static str> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -174,7 +174,7 @@ pub fn ensure_sandbox_bin_with_version(version: &str) -> anyhow::Result<PathBuf>
         bin_path = install_with_version(version)?;
         println!("Installed near-sandbox into {}", bin_path.to_str().unwrap());
         std::env::set_var("NEAR_SANDBOX_BIN_PATH", bin_path.as_os_str());
-        lockfile.unlock()?;
+        fs2::FileExt::unlock(&lockfile)?;
     }
 
     Ok(bin_path)
