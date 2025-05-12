@@ -21,7 +21,7 @@ defaults:
 
 jobs:
   clippy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
       run: cargo clippy --benches -- -D clippy::all
 
   cargo-fmt:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
   # won't look as expected, when rendered, and sometimes errors, which will prevent doc from being
   # generated at release time altogether.
   cargo-doc:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4
@@ -48,7 +48,7 @@ jobs:
       run: RUSTDOCFLAGS="-D warnings" cargo doc
 
   release-plz:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [clippy, cargo-fmt, cargo-doc]
     if: github.ref == 'refs/heads/main'
     steps:
