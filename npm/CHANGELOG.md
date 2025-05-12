@@ -1,5 +1,11 @@
 # near-sandbox
 
+## 0.1.5
+
+### Patch Changes
+
+- 088318e: Updated near-sandbox version to 2.6.2 version
+
 ## 0.1.4
 
 ### Patch Changes
