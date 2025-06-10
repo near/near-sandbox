@@ -160,7 +160,7 @@ fn overwrite_genesis(home_dir: impl AsRef<Path>, config: &SandboxConfig) -> anyh
     accounts_to_add.extend(config.additional_accounts.clone());
 
     for account in &accounts_to_add {
-        total_supply += account.amount;
+        total_supply += account.balance;
     }
 
     genesis_obj.insert(
@@ -179,7 +179,7 @@ fn overwrite_genesis(home_dir: impl AsRef<Path>, config: &SandboxConfig) -> anyh
                 "Account": {
                     "account_id": account.account_id,
                     "account": {
-                    "amount": account.amount.to_string(),
+                    "amount": account.balance.to_string(),
                     "locked": "0",
                     "code_hash": "11111111111111111111111111111111",
                     "storage_usage": 182
