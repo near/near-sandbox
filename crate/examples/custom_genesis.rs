@@ -7,14 +7,7 @@ async fn main() -> Result<()> {
     let mut config = SandboxConfig::default();
 
     config.additional_genesis = Some(json!({
-        "runtime_config": {
-            "wasm_config ": {
-                "limit_config": {
-                    "max_total_prepaid_gas": 400000000000000u128,
-                    "max_gas_burnt": 400000000000000u128
-                }
-            }
-        }
+        "epoch_length": 100,
     }));
 
     config.additional_accounts = vec![

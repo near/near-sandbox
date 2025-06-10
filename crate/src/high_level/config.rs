@@ -23,14 +23,15 @@ pub const DEFAULT_GENESIS_ACCOUNT: &str = "sandbox";
 pub const DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY: &str = "ed25519:3tgdk2wPraJzT4nsTuf86UX41xgPNk3MHnq8epARMdBNs29AFEztAuaQ7iHddDfXG9F2RzV1XNQYgJyAyoW51UBB";
 pub const DEFAULT_GENESIS_ACCOUNT_PUBLIC_KEY: &str =
     "ed25519:5BGSaf6YjVm7565VzWQHNxoyEjwr3jUpRJSGjREvU9dB";
-pub const DEFAULT_GENESIS_ACCOUNT_AMOUNT: u128 = 10_000_000_000_000_000_000_000_000_000_u128;
+pub const DEFAULT_GENESIS_ACCOUNT_BALANCE: u128 = 10_000u128 * 10u128.pow(24);
 
+/// Genesis account configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenesisAccount {
     pub account_id: String,
     pub public_key: String,
     pub private_key: String,
-    pub amount: u128,
+    pub balance: u128,
 }
 
 impl Default for GenesisAccount {
@@ -39,7 +40,7 @@ impl Default for GenesisAccount {
             account_id: DEFAULT_GENESIS_ACCOUNT.to_string(),
             public_key: DEFAULT_GENESIS_ACCOUNT_PUBLIC_KEY.to_string(),
             private_key: DEFAULT_GENESIS_ACCOUNT_PRIVATE_KEY.to_string(),
-            amount: DEFAULT_GENESIS_ACCOUNT_AMOUNT,
+            balance: DEFAULT_GENESIS_ACCOUNT_BALANCE,
         }
     }
 }
