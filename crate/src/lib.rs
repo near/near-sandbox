@@ -10,7 +10,7 @@ pub mod high_level;
 pub mod sync;
 
 // Re-export important types for better user experience
-pub use high_level::{Sandbox, SandboxConfig, GenesisAccount};
+pub use high_level::{GenesisAccount, Sandbox, SandboxConfig};
 
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.
