@@ -62,12 +62,16 @@ jobs:
           cd npm
           mkdir -p .changeset
           uuid=$(uuidgen | tr '[:upper:]' '[:lower:]' | tr -d '-')
+          latest_version="${{ steps.latest-version.outputs.latest_version }}"
           cat > .changeset/$uuid.md <<EOF
           ---
           "near-sandbox": patch
           ---
-          Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}
+          Update nearcore version to $latest_version
           EOF
+
+          echo "Changeset:"
+          cat .changeset/$uuid.md
 
       - name: Check changeset
         run: |
