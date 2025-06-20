@@ -70,6 +70,8 @@ jobs:
         if: steps.check-changes.outputs.update_needed == 'true'
         run: |
           git add crate/src/lib.rs npm/src/getBinary.ts npm/.changeset/
+          git status --porcelain
+          
           git commit -m "Update NEAR Core version to ${{ steps.latest-version.outputs.latest_version }}
 
           - Updated DEFAULT_NEAR_SANDBOX_VERSION in crate/src/lib.rs
