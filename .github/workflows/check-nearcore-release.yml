@@ -1,0 +1,107 @@
+name: Check NEAR Core Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-nearcore-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run NEAR Core update script
+        run: |
+          node scripts/check-nearcore-release.js
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+            git status --porcelain
+          fi
+
+      - name: Setup Git
+        if: steps.check-changes.outputs.update_needed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Get latest version for branch name
+        if: steps.check-changes.outputs.update_needed == 'true'
+        id: latest-version
+        run: |
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/near/nearcore/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create update branch
+        if: steps.check-changes.outputs.update_needed == 'true'
+        run: |
+          BRANCH_NAME="update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+      
+      - name: Create changeset
+        if: steps.check-changes.outputs.update_needed == 'true'
+        run: |
+          cd npm
+          npm install
+          echo "near-sandbox: patch" | npm run changeset add
+          echo "Created changeset for NEAR Core version update to ${{ steps.latest-version.outputs.latest_version }}"
+
+
+      - name: Commit changes
+        if: steps.check-changes.outputs.update_needed == 'true'
+        run: |
+          git add crate/src/lib.rs npm/src/getBinary.ts npm/.changeset/
+          git commit -m "Update NEAR Core version to ${{ steps.latest-version.outputs.latest_version }}
+
+          - Updated DEFAULT_NEAR_SANDBOX_VERSION in crate/src/lib.rs
+          - Updated AWS URL version in npm/src/getBinary.ts
+          "
+
+      - name: Push changes
+        if: steps.check-changes.outputs.update_needed == 'true'
+        run: |
+          git push --force-with-lease origin "$BRANCH_NAME"
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.update_needed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.branch_name }}
+          title: "Update NEAR Core version to ${{ steps.latest-version.outputs.latest_version }}"
+          body: |
+            ## Summary
+            
+            This PR updates the NEAR Core sandbox version to `${{ steps.latest-version.outputs.latest_version }}`.
+            
+            ## Changes
+            
+            - Updated `DEFAULT_NEAR_SANDBOX_VERSION` in `crate/src/lib.rs`
+            - Updated AWS URL version in `npm/src/getBinary.ts`
+            
+            *This PR was automatically created by the [Check NEAR Core Release](/.github/workflows/check-nearcore-release.yml) workflow.*
+          base: main
+          delete-branch: true
+          labels: |
+            automated
+            nearcore-update
+            dependencies
