@@ -63,7 +63,6 @@ function updateLibRs(newVersion, releaseDate) {
             `DEFAULT_NEAR_SANDBOX_VERSION: &str = "${newVersion}";`
         );
 
-        // Format the release date from GitHub API
         const formattedReleaseDate = new Date(releaseDate).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -123,13 +122,11 @@ async function main() {
         console.log('\n✅ Files updated successfully. Changes will be detected by git status.');
     } catch (error) {
         console.error('❌ Error:', error.message);
-        // Don't exit with error code - let the workflow handle it
-        console.log('Script completed with errors, but continuing workflow execution.');
+        process.exit(1);
     }
 }
 
 main().catch(error => {
     console.error('❌ Unexpected error:', error.message);
-    // Always exit with success code since we're not relying on exit codes anymore
-    console.log('Script completed with unexpected errors, but continuing workflow execution.');
+    process.exit(1);
 }); 
