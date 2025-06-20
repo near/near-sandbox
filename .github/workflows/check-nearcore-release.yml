@@ -67,6 +67,7 @@ jobs:
           ---
           "near-sandbox": patch
           ---
+
           Update nearcore version to $latest_version
           EOF
 
@@ -97,7 +98,7 @@ jobs:
             - Updated `DEFAULT_NEAR_SANDBOX_VERSION` in `crate/src/lib.rs`
             - Updated AWS URL version in `npm/src/getBinary.ts`
             
-            *This PR was automatically created by the [Check Nearcore Release](/.github/workflows/check-nearcore-release.yml) workflow.*
+            *This PR was automatically created by the Check Nearcore Release workflow.*
           base: main
           delete-branch: true
           labels: |
