@@ -84,7 +84,6 @@ jobs:
             npm/src/getBinary.ts
             npm/.changeset/
           commit-message: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
-          branch: ${{ env.branch_name }}
           title: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
           body: |
             ## Summary
