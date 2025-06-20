@@ -57,13 +57,17 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
       
-      - name: Create changeset
-        if: steps.check-changes.outputs.update_needed == 'true'
-        run: |
-          cd npm
-          npm install
-          echo "near-sandbox: patch" | npm run changeset add
-          echo "update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
+          - name: Generate Changeset
+          run: |
+            mkdir -p .changeset
+            uuid=$(uuidgen | tr '[:upper:]' '[:lower:]' | tr -d '-')
+            cat > .changeset/$uuid.md <<EOF
+          ---
+          "near-sandbox": patch
+          ---
+
+          Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}
+          EOF
 
       - name: Create Pull Request
         if: steps.check-changes.outputs.update_needed == 'true'
@@ -82,6 +86,8 @@ jobs:
             
             This PR updates the nearcore sandbox version to `${{ steps.latest-version.outputs.latest_version }}`.
             
+            - [Release Notes](https://github.com/near/nearcore/releases/tag/${{ steps.latest-version.outputs.latest_version }})
+
             ## Changes
             
             - Updated `DEFAULT_NEAR_SANDBOX_VERSION` in `crate/src/lib.rs`
