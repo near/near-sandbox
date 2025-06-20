@@ -78,7 +78,7 @@ jobs:
         if: steps.check-changes.outputs.update_needed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           add-paths: |
             crate/src/lib.rs
             npm/src/getBinary.ts
