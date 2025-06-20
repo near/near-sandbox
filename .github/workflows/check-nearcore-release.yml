@@ -1,4 +1,4 @@
-name: Check NEAR Core Release
+name: Check Nearcore Release
 
 on:
   schedule:
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Run NEAR Core update script
+      - name: Run nearcore update script
         run: |
           node scripts/check-nearcore-release.js
 
@@ -63,44 +63,31 @@ jobs:
           cd npm
           npm install
           echo "near-sandbox: patch" | npm run changeset add
-          echo "Created changeset for NEAR Core version update to ${{ steps.latest-version.outputs.latest_version }}"
-
-
-      - name: Commit changes
-        if: steps.check-changes.outputs.update_needed == 'true'
-        run: |
-          git add crate/src/lib.rs npm/src/getBinary.ts npm/.changeset/
-          git status --porcelain
-          
-          git commit -m "Update NEAR Core version to ${{ steps.latest-version.outputs.latest_version }}
-
-          - Updated DEFAULT_NEAR_SANDBOX_VERSION in crate/src/lib.rs
-          - Updated AWS URL version in npm/src/getBinary.ts
-          "
-
-      - name: Push changes
-        if: steps.check-changes.outputs.update_needed == 'true'
-        run: |
-          git push --force-with-lease origin ${{ env.branch_name }}
+          echo "update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
 
       - name: Create Pull Request
         if: steps.check-changes.outputs.update_needed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: |
+            crate/src/lib.rs
+            npm/src/getBinary.ts
+            npm/.changeset/
+          commit-message: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
           branch: ${{ env.branch_name }}
-          title: "Update NEAR Core version to ${{ steps.latest-version.outputs.latest_version }}"
+          title: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
           body: |
             ## Summary
             
-            This PR updates the NEAR Core sandbox version to `${{ steps.latest-version.outputs.latest_version }}`.
+            This PR updates the nearcore sandbox version to `${{ steps.latest-version.outputs.latest_version }}`.
             
             ## Changes
             
             - Updated `DEFAULT_NEAR_SANDBOX_VERSION` in `crate/src/lib.rs`
             - Updated AWS URL version in `npm/src/getBinary.ts`
             
-            *This PR was automatically created by the [Check NEAR Core Release](/.github/workflows/check-nearcore-release.yml) workflow.*
+            *This PR was automatically created by the [Check Nearcore Release](/.github/workflows/check-nearcore-release.yml) workflow.*
           base: main
           delete-branch: true
           labels: |
