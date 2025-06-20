@@ -78,6 +78,8 @@ jobs:
             npm/.changeset/
           commit-message: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
           title: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
+          branch: "update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
+          delete-branch: true
           body: |
             ## Summary
             
