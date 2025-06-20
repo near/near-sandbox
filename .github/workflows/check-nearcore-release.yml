@@ -49,13 +49,6 @@ jobs:
         run: |
           LATEST_VERSION=$(curl -s https://api.github.com/repos/near/nearcore/releases/latest | jq -r '.tag_name' | sed 's/^v//')
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Create update branch
-        if: steps.check-changes.outputs.update_needed == 'true'
-        run: |
-          BRANCH_NAME="update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
-          git checkout -b "$BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
       
       - name: Generate Changeset
         run: |
@@ -76,16 +69,17 @@ jobs:
 
       - name: Create Pull Request
         if: steps.check-changes.outputs.update_needed == 'true'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
           add-paths: |
             crate/src/lib.rs
             npm/src/getBinary.ts
             npm/.changeset/
           commit-message: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
-          branch: ${{ env.branch_name }}
           title: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
+          branch: "update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
+          delete-branch: true
           body: |
             ## Summary
             
@@ -100,7 +94,6 @@ jobs:
             
             *This PR was automatically created by the Check Nearcore Release workflow.*
           base: main
-          delete-branch: true
           labels: |
             automated
             nearcore-update
