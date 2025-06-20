@@ -54,6 +54,9 @@ jobs:
         if: steps.check-changes.outputs.update_needed == 'true'
         run: |
           BRANCH_NAME="update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
+          if git branch -D "$BRANCH_NAME"; then
+            echo "Branch $BRANCH_NAME already exists, deleting"
+          fi
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
       
