@@ -49,13 +49,6 @@ jobs:
         run: |
           LATEST_VERSION=$(curl -s https://api.github.com/repos/near/nearcore/releases/latest | jq -r '.tag_name' | sed 's/^v//')
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Create update branch
-        if: steps.check-changes.outputs.update_needed == 'true'
-        run: |
-          BRANCH_NAME="update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
-          git checkout -b "$BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
       
       - name: Generate Changeset
         run: |
@@ -99,7 +92,6 @@ jobs:
             
             *This PR was automatically created by the Check Nearcore Release workflow.*
           base: main
-          delete-branch: true
           labels: |
             automated
             nearcore-update
