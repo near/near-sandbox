@@ -73,12 +73,6 @@ jobs:
           echo "Changeset:"
           cat .changeset/$uuid.md
 
-      - name: Check changeset
-        run: |
-          cd npm
-          npm install
-          npm run changeset version
-
       - name: Create Pull Request
         if: steps.check-changes.outputs.update_needed == 'true'
         uses: peter-evans/create-pull-request@v5
