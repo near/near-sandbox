@@ -4,7 +4,7 @@ NEAR Sandbox lets you easily run a local NEAR blockchain.
 
 NEAR Sandbox is a [custom build](https://github.com/near/nearcore/blob/9f5e20b29f1a15a00fc50d6051b3b44bb6db60b6/Makefile#L67-L69) of the NEAR blockchain optimized for local development and testing. If you're familiar with [Ganache for Ethereum](https://www.trufflesuite.com/ganache), this is similar.
 
-This repository contains code to quickly install pre-built binaries of NEAR Sandbox for multiple programming languages (currently just NodeJS; Rust coming soon) and operating systems (currently just Intel-based Macs and Debian/Ubuntu-flavored Linux distros using Intel processors).
+This repository contains code to quickly install pre-built binaries of NEAR Sandbox for multiple programming languages (currently just NodeJS; Rust coming soon) and operating systems (currently just ARM64-based Macs and Debian/Ubuntu-flavored Linux distros using Intel processors).
 
 # Using NEAR Sandbox
 
