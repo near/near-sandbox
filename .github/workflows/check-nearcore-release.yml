@@ -79,7 +79,7 @@ jobs:
       - name: Push changes
         if: steps.check-changes.outputs.update_needed == 'true'
         run: |
-          git push --force-with-lease origin "$BRANCH_NAME"
+          git push --force-with-lease origin ${{ env.branch_name }}
 
       - name: Create Pull Request
         if: steps.check-changes.outputs.update_needed == 'true'
