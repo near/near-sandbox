@@ -1,0 +1,100 @@
+name: Check Nearcore Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-nearcore-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run nearcore update script
+        run: |
+          node scripts/check-nearcore-release.js
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+            git status --porcelain
+          fi
+
+      - name: Setup Git
+        if: steps.check-changes.outputs.update_needed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Get latest version for branch name
+        if: steps.check-changes.outputs.update_needed == 'true'
+        id: latest-version
+        run: |
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/near/nearcore/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Generate Changeset
+        run: |
+          cd npm
+          mkdir -p .changeset
+          uuid=$(uuidgen | tr '[:upper:]' '[:lower:]' | tr -d '-')
+          latest_version="${{ steps.latest-version.outputs.latest_version }}"
+          cat > .changeset/$uuid.md <<EOF
+          ---
+          "near-sandbox": patch
+          ---
+
+          Update nearcore version to $latest_version
+          EOF
+
+          echo "Changeset:"
+          cat .changeset/$uuid.md
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.update_needed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          add-paths: |
+            crate/src/lib.rs
+            npm/src/getBinary.ts
+            npm/.changeset/
+          commit-message: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
+          title: "Update nearcore version to ${{ steps.latest-version.outputs.latest_version }}"
+          branch: "update-nearcore-${{ steps.latest-version.outputs.latest_version }}"
+          delete-branch: true
+          body: |
+            ## Summary
+            
+            This PR updates the nearcore sandbox version to `${{ steps.latest-version.outputs.latest_version }}`.
+            
+            - [Release Notes](https://github.com/near/nearcore/releases/tag/${{ steps.latest-version.outputs.latest_version }})
+
+            ## Changes
+            
+            - Updated `DEFAULT_NEAR_SANDBOX_VERSION` in `crate/src/lib.rs`
+            - Updated AWS URL version in `npm/src/getBinary.ts`
+            
+            *This PR was automatically created by the Check Nearcore Release workflow.*
+          base: main
+          labels: |
+            automated
+            nearcore-update
+            dependencies
