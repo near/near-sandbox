@@ -1,4 +1,5 @@
 use std::net::SocketAddrV4;
+use std::time::Duration;
 use std::{fs::File, net::Ipv4Addr};
 
 use fs2::FileExt;
@@ -121,6 +122,8 @@ impl Sandbox {
 
         let rpc_addr = format!("http://{rpc_addr}");
 
+        Self::wait_until_ready(&rpc_addr).await?;
+
         Ok(Self {
             home_dir,
             rpc_addr,
@@ -139,6 +142,27 @@ impl Sandbox {
         info!(target: "sandbox", "sandbox init: {:?}", output);
 
         Ok(home_dir)
+    }
+
+    async fn wait_until_ready(rpc: &str) -> anyhow::Result<()> {
+        let timeout_secs = match std::env::var("NEAR_RPC_TIMEOUT_SECS") {
+            Ok(secs) => secs
+                .parse::<u64>()
+                .expect("Failed to parse NEAR_RPC_TIMEOUT_SECS"),
+            Err(_) => 10,
+        };
+
+        let mut interval = tokio::time::interval(Duration::from_millis(500));
+        for _ in 0..timeout_secs * 2 {
+            interval.tick().await;
+            let response = reqwest::get(format!("{}/status", rpc)).await;
+            if response.is_ok() {
+                return Ok(());
+            }
+        }
+        Err(anyhow::anyhow!(
+            "Sandbox didn't start with the provided timeout"
+        ))
     }
 }
 

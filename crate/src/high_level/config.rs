@@ -46,7 +46,7 @@ impl Default for GenesisAccount {
 }
 
 /// Configuration for the sandbox
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SandboxConfig {
     /// Maximum payload size for JSON RPC requests in bytes
     pub max_payload_size: Option<usize>,
@@ -58,18 +58,6 @@ pub struct SandboxConfig {
     pub additional_accounts: Vec<GenesisAccount>,
     /// Additional JSON configuration to merge with the genesis
     pub additional_genesis: Option<Value>,
-}
-
-impl Default for SandboxConfig {
-    fn default() -> Self {
-        Self {
-            max_payload_size: None,
-            max_open_files: None,
-            additional_config: None,
-            additional_accounts: vec![],
-            additional_genesis: None,
-        }
-    }
 }
 
 /// Overwrite the $home_dir/config.json file over a set of entries. `value` will be used per (key, value) pair
@@ -203,11 +191,8 @@ fn overwrite_genesis(home_dir: impl AsRef<Path>, config: &SandboxConfig) -> anyh
     }
 
     if let Some(additional_genesis) = &config.additional_genesis {
-        println!("patching: {:?}", additional_genesis);
         json_patch::merge(&mut genesis, additional_genesis);
     }
-
-    println!("genesis, {:#?}", genesis);
 
     let config_file = File::create(home_dir.join("genesis.json"))?;
     serde_json::to_writer(config_file, &genesis)?;
