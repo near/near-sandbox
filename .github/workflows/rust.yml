@@ -6,12 +6,12 @@ permissions:
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: '-D warnings'
+  RUSTFLAGS: "-D warnings"
   CARGO_INCREMENTAL: 0
   RUST_BACKTRACE: short
 
@@ -24,17 +24,20 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Run clippy
-      run: cargo clippy --benches -- -D clippy::all
+      - uses: actions/checkout@v4
+      - name: Install libudev (Linux only)
+        if: runner.os == 'Linux'
+        run: sudo apt update && sudo apt-get install libudev-dev libsystemd-dev
+      - name: Run clippy
+        run: cargo clippy --benches -- -D clippy::all
 
   cargo-fmt:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Run cargo fmt
-      run: cargo fmt --check
+      - uses: actions/checkout@v4
+      - name: Run cargo fmt
+        run: cargo fmt --check
 
   # there're sometimes warnings, which signal, that the generated doc
   # won't look as expected, when rendered, and sometimes errors, which will prevent doc from being
@@ -43,9 +46,9 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: run cargo doc
-      run: RUSTDOCFLAGS="-D warnings" cargo doc
+      - uses: actions/checkout@v4
+      - name: run cargo doc
+        run: RUSTDOCFLAGS="-D warnings" cargo doc
 
   release-plz:
     runs-on: ubuntu-24.04
@@ -59,6 +62,9 @@ jobs:
           token: ${{ secrets.MY_GITHUB_TOKEN }}
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+      - name: Install libudev (Linux only)
+        if: runner.os == 'Linux'
+        run: sudo apt update && sudo apt-get install libudev-dev libsystemd-dev
       - name: Run release-plz
         uses: MarcoIeni/release-plz-action@v0.5
         env:
