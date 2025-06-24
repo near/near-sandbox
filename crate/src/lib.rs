@@ -6,7 +6,11 @@ use tokio::process::{Child, Command};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
+pub mod high_level;
 pub mod sync;
+
+// Re-export important types for better user experience
+pub use high_level::{GenesisAccount, Sandbox, SandboxConfig};
 
 // The current version of the sandbox node we want to point to.
 // Should be updated to the latest release of nearcore.

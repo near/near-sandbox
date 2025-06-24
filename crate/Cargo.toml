@@ -10,10 +10,21 @@ Utility library for launching NEAR sandbox environments.
 
 [dependencies]
 anyhow = "1"
-tokio = { version = "1", features = ["process"] }
+tokio = { version = "1", features = ["process", "net"] }
 binary-install = "0.2.0"
 fs2 = "0.4"
 home = "0.5.5"
+
+tempfile = "3.19"
+json-patch = "4.0"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1"
+reqwest = "0.12.20"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+near-api = "0.6"
 
 [features]
 global_install = []
