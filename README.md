@@ -10,7 +10,7 @@
 
 | Platform               | Repository                                                 | Latest Release                                                                                                                                                                                  |
 | ---------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust                   | [near-sandbox-rs](https://github.com/near/near-sandbox-rs) | <a href="https://crates.io/crates/near-sandbox-utils"><img src="https://img.shields.io/crates/v/near-sandbox-utils.svg?style=flat-square" alt="`near-sandbox-rs` Latest Release Version" /></a> |
+| Rust                   | [near-sandbox-rs](https://github.com/near/near-sandbox-rs) | <a href="https://crates.io/crates/near-sandbox-utils"><img src="https://img.shields.io/crates/v/near-sandbox.svg?style=flat-square" alt="`near-sandbox-rs` Latest Release Version" /></a> |
 | TypeScript, JavaScript | [near-sandbox-js](https://github.com/near/near-sandbox-js) | <a href="https://npmjs.com/near-sandbox"><img src="https://img.shields.io/npm/v/near-sandbox.svg?style=flat-square" alt="`near-sandbox-js` Latest Release Version" /></a>                       |
 
 ## What is NEAR Sandbox?
